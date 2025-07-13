@@ -20,6 +20,12 @@
 	let currentTheme =
 		"futuristic";
 	let showEditMode = false;
+	let transformedStory =
+		applyConceptMappings(
+			storyText,
+			conceptMappings,
+			foundConcepts
+		);
 
 	// Apply theme preset
 	function applyTheme(
