@@ -1,1 +1,273 @@
-@import 'tailwindcss';
+@import "tailwindcss";
+
+:root {
+	font-family: "Montserrat", system-ui,
+		sans-serif;
+}
+
+html {
+	scroll-behavior: smooth;
+}
+
+body {
+	background-color: #14100c; /* deep umber-black, like a dark gallery wall */
+	color: #e7e1d6;
+	font-family: "Montserrat", system-ui,
+		sans-serif;
+}
+
+/* Dark painterly gallery: warm vignette + faint canvas grain over umber. */
+.gallery {
+	background:
+		radial-gradient(
+			ellipse at 50% -10%,
+			rgba(217, 159, 86, 0.06),
+			transparent 55%
+		),
+		radial-gradient(
+			ellipse at 100% 100%,
+			rgba(124, 45, 18, 0.08),
+			transparent 50%
+		),
+		#14100c;
+	position: relative;
+}
+.gallery::before {
+	content: "";
+	position: fixed;
+	inset: 0;
+	pointer-events: none;
+	z-index: 0;
+	opacity: 0.35;
+	mix-blend-mode: overlay;
+	background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='220' height='220'%3E%3Cfilter id='c'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.7' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23c)'/%3E%3C/svg%3E");
+}
+.gallery > * {
+	position: relative;
+	z-index: 1;
+}
+
+/* Drifting embers — faint, warm, ethereal motes rising behind everything. */
+.embers {
+	position: fixed;
+	inset: -10% 0 0 0;
+	pointer-events: none;
+	z-index: 0;
+	opacity: 0.28;
+	mix-blend-mode: screen;
+	filter: blur(0.4px);
+	background-repeat: no-repeat;
+	background-image: radial-gradient(
+			2px 2px at 12% 70%,
+			rgba(255, 184, 92, 0.9),
+			transparent
+		),
+		radial-gradient(
+			1.5px 1.5px at 28% 88%,
+			rgba(255, 140, 60, 0.8),
+			transparent
+		),
+		radial-gradient(
+			2.5px 2.5px at 44% 62%,
+			rgba(255, 206, 120, 0.7),
+			transparent
+		),
+		radial-gradient(
+			1px 1px at 60% 92%,
+			rgba(255, 170, 80, 0.8),
+			transparent
+		),
+		radial-gradient(
+			2px 2px at 74% 76%,
+			rgba(255, 150, 70, 0.8),
+			transparent
+		),
+		radial-gradient(
+			1.5px 1.5px at 88% 84%,
+			rgba(255, 200, 110, 0.7),
+			transparent
+		);
+	animation: ember-rise 16s linear
+		infinite;
+}
+@keyframes ember-rise {
+	0% {
+		transform: translateY(8%);
+		opacity: 0;
+	}
+	15% {
+		opacity: 0.28;
+	}
+	85% {
+		opacity: 0.28;
+	}
+	100% {
+		transform: translateY(-90%);
+		opacity: 0;
+	}
+}
+
+/* --- Burning-paper route veil ----------------------------------------- */
+.veil {
+	position: fixed;
+	inset: 0;
+	z-index: 60;
+	pointer-events: none;
+	opacity: 0;
+}
+.veil[data-phase="cover"],
+.veil[data-phase="reveal"] {
+	opacity: 1;
+}
+
+.veil-sheet {
+	position: absolute;
+	left: -2%;
+	right: -2%;
+	top: 0;
+	height: 100%;
+	transform: translateY(102%);
+	will-change: transform;
+	/* warm ash, opaque, with a hint of fire glowing from below */
+	background:
+		radial-gradient(
+			120% 60% at 50% 108%,
+			rgba(255, 120, 40, 0.5),
+			transparent 60%
+		),
+		linear-gradient(
+			to top,
+			#0d0905,
+			#1b120b 70%,
+			#241811
+		);
+}
+/* glowing ember edge that leads the sweep */
+.veil-sheet::before {
+	content: "";
+	position: absolute;
+	left: 0;
+	right: 0;
+	top: -54px;
+	height: 110px;
+	background: linear-gradient(
+		to top,
+		rgba(255, 110, 30, 0.85),
+		rgba(255, 180, 80, 0.65) 45%,
+		rgba(255, 220, 140, 0) 100%
+	);
+	filter: blur(7px);
+	mix-blend-mode: screen;
+}
+/* faint canvas grain so the ash reads as paper, not a flat block */
+.veil-sheet::after {
+	content: "";
+	position: absolute;
+	inset: 0;
+	opacity: 0.4;
+	mix-blend-mode: overlay;
+	background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='v'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.7' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23v)'/%3E%3C/svg%3E");
+	background-size: 180px 180px;
+}
+
+.veil[data-phase="cover"] .veil-sheet {
+	transform: translateY(0);
+	transition: transform 440ms
+		cubic-bezier(0.45, 0, 0.55, 1);
+}
+.veil[data-phase="reveal"] .veil-sheet {
+	transform: translateY(-102%);
+	transition: transform 640ms
+		cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.veil {
+		display: none;
+	}
+}
+
+/* --- Impasto paint placeholder ---------------------------------------- */
+/* Colours come from CSS vars --c1/--c2/--c3 set per category. Layered
+   gradients fake palette-knife blobs; inset shadows raise the "paint";
+   striations + grain add brushwork and canvas tooth. */
+.impasto {
+	position: relative;
+	overflow: hidden;
+	background-color: var(--c2);
+	background-image: radial-gradient(
+			55% 75% at 28% 22%,
+			var(--c1) 0%,
+			transparent 60%
+		),
+		radial-gradient(
+			65% 70% at 78% 78%,
+			var(--c3) 0%,
+			transparent 55%
+		),
+		radial-gradient(
+			45% 55% at 62% 45%,
+			var(--c1) 0%,
+			transparent 55%
+		),
+		linear-gradient(
+			135deg,
+			var(--c2),
+			var(--c3)
+		);
+	box-shadow:
+		inset 3px 3px 7px
+			rgba(255, 245, 230, 0.22),
+		inset -4px -5px 12px
+			rgba(0, 0, 0, 0.55);
+}
+.impasto::before {
+	content: "";
+	position: absolute;
+	inset: 0;
+	/* knife strokes */
+	background-image: repeating-linear-gradient(
+		115deg,
+		rgba(255, 250, 240, 0.06) 0 2px,
+		rgba(0, 0, 0, 0.05) 2px 4px,
+		transparent 4px 9px
+	);
+	mix-blend-mode: overlay;
+}
+.impasto::after {
+	content: "";
+	position: absolute;
+	inset: 0;
+	/* canvas/paint grain */
+	background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+	background-size: 160px 160px;
+	mix-blend-mode: overlay;
+	opacity: 0.55;
+}
+
+/* --- Gilded gallery frame --------------------------------------------- */
+.frame {
+	border: 6px solid;
+	border-image: linear-gradient(
+			135deg,
+			#6b5640,
+			#2b211a 35%,
+			#8a6f4e 55%,
+			#241c16
+		)
+		1;
+	box-shadow:
+		0 12px 34px rgba(0, 0, 0, 0.6),
+		inset 0 0 0 1px rgba(0, 0, 0, 0.6);
+}
+
+/* Respect users who prefer less motion: still the embers and smooth scroll. */
+@media (prefers-reduced-motion: reduce) {
+	html {
+		scroll-behavior: auto;
+	}
+	.embers {
+		animation: none;
+		opacity: 0.18;
+	}
+}
