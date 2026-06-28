@@ -9,10 +9,17 @@
 		paginate,
 	} from "$lib/content/chapters.js";
 	import {
+		choicesFor,
+		isPartEnd,
+		isEnding,
+		partOf,
+		partLabel,
+	} from "$lib/content/storyGraph.js";
+	import {
 		lore,
 		loreById,
 	} from "$lib/content/lore.js";
-	import { reachChapter } from "$lib/progress.js";
+	import { visit } from "$lib/progress.js";
 	import ProseReader from "$lib/components/ProseReader.svelte";
 	import LoreModal from "$lib/components/LoreModal.svelte";
 
@@ -26,11 +33,17 @@
 	let prev = $derived(
 		idx > 0 ? chapters[idx - 1] : null
 	);
-	let next = $derived(
-		idx >= 0 &&
-			idx < chapters.length - 1
-			? chapters[idx + 1]
-			: null
+
+	// The fork at the end of this chapter (one canon "continue" by default,
+	// 2+ when authored, none at an ending), plus part-boundary framing.
+	let choices = $derived(
+		choicesFor(slug)
+	);
+	let ending = $derived(isEnding(slug));
+	let partEnd = $derived(isPartEnd(slug));
+	let part = $derived(partOf(slug));
+	let partName = $derived(
+		partLabel(part)
 	);
 
 	let pages = $derived(
@@ -43,9 +56,10 @@
 		pageNum >= pages.length - 1
 	);
 
-	// Reaching a chapter unlocks its tier of lore reveals.
+	// Reaching a chapter records it on the reader's journey, which unlocks its
+	// tier of lore reveals and reveals it on the home page.
 	$effect(() => {
-		if (idx >= 0) reachChapter(idx);
+		visit(slug);
 	});
 
 	// Reset to the first page whenever the chapter changes.
@@ -166,7 +180,9 @@
 			</button>
 		</div>
 
-		<!-- End-of-chapter hand-off, only on the last page -->
+		<!-- End-of-chapter hand-off, only on the last page. Driven by the story
+		     graph: an ending → the Codex, a single continuation → one card, a
+		     branch point → a card per choice. -->
 		{#if onLastPage}
 			<div
 				class="mt-10"
@@ -175,20 +191,61 @@
 					duration: 400,
 				}}
 			>
-				{#if next}
+				{#if ending}
 					<a
-						href={`/read/${next.slug}`}
+						href="/codex"
 						class="group flex items-center justify-between gap-4 rounded-xl border border-amber-900/30 bg-gradient-to-r from-amber-950/30 to-transparent px-6 py-5 transition-colors hover:border-amber-600/50 hover:from-amber-900/30"
 					>
 						<span>
 							<span
 								class="block text-xs uppercase tracking-[0.2em] text-amber-500/70"
-								>Continue reading</span
+								>End of Part {part}: {partName}</span
 							>
 							<span
 								class="text-lg font-light text-stone-100 group-hover:text-amber-50"
+								>Explore the Codex</span
 							>
-								{next.number} · {next.title}
+						</span>
+						<span
+							class="text-2xl text-amber-400 transition-transform group-hover:translate-x-1"
+							>→</span
+						>
+					</a>
+				{:else if choices.length === 1}
+					{@const only = choices[0]}
+					{@const target = getChapter(
+						only.to
+					)}
+					{#if partEnd}
+						<p
+							class="mb-4 text-center text-xs uppercase tracking-[0.3em] text-amber-500/60"
+						>
+							End of Part {part}: {partName}
+						</p>
+					{/if}
+					<a
+						href={`/read/${only.to}`}
+						class="group flex items-center justify-between gap-4 rounded-xl border border-amber-900/30 bg-gradient-to-r from-amber-950/30 to-transparent px-6 py-5 transition-colors hover:border-amber-600/50 hover:from-amber-900/30"
+					>
+						<span>
+							<span
+								class="block text-xs uppercase tracking-[0.2em] text-amber-500/70"
+							>
+								{#if partEnd && target}Begin
+									Part {partOf(
+										only.to
+									)}: {partLabel(
+										partOf(only.to)
+									)}{:else}Continue
+									reading{/if}
+							</span>
+							<span
+								class="text-lg font-light text-stone-100 group-hover:text-amber-50"
+							>
+								{only.label ??
+									(target
+										? `${target.number} · ${target.title}`
+										: only.to)}
 							</span>
 						</span>
 						<span
@@ -197,26 +254,42 @@
 						>
 					</a>
 				{:else}
-					<a
-						href="/codex"
-						class="group flex items-center justify-between gap-4 rounded-xl border border-amber-900/30 bg-gradient-to-r from-amber-950/30 to-transparent px-6 py-5 transition-colors hover:border-amber-600/50 hover:from-amber-900/30"
+					<p
+						class="mb-4 text-center text-sm uppercase tracking-[0.3em] text-amber-400/80"
 					>
-						<span>
-							<span
-								class="block text-xs uppercase tracking-[0.2em] text-amber-500/70"
-								>End of Part 1: Rhythm</span
+						The path forks
+					</p>
+					<div class="space-y-3">
+						{#each choices as choice}
+							{@const target =
+								getChapter(choice.to)}
+							<a
+								href={`/read/${choice.to}`}
+								class="group flex items-center justify-between gap-4 rounded-xl border border-amber-900/30 bg-gradient-to-r from-amber-950/30 to-transparent px-6 py-5 transition-colors hover:border-amber-600/50 hover:from-amber-900/30"
 							>
-							<span
-								class="text-lg font-light text-stone-100 group-hover:text-amber-50"
-							>
-								Explore the Codex
-							</span>
-						</span>
-						<span
-							class="text-2xl text-amber-400 transition-transform group-hover:translate-x-1"
-							>→</span
-						>
-					</a>
+								<span>
+									<span
+										class="text-lg font-light text-stone-100 group-hover:text-amber-50"
+									>
+										{choice.label ??
+											(target
+												? `${target.number} · ${target.title}`
+												: choice.to)}
+									</span>
+									{#if choice.hint}
+										<span
+											class="mt-0.5 block text-xs text-stone-400"
+											>{choice.hint}</span
+										>
+									{/if}
+								</span>
+								<span
+									class="text-2xl text-amber-400 transition-transform group-hover:translate-x-1"
+									>→</span
+								>
+							</a>
+						{/each}
+					</div>
 				{/if}
 			</div>
 		{/if}

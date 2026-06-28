@@ -9,8 +9,8 @@
 	// screen, the page swaps underneath it, then it lifts away to reveal the new
 	// page — led by a glowing ember edge. Reliable because it's independent of
 	// page content (no overlapping text).
-	const COVER = 440;
-	const REVEAL = 640;
+	const COVER = 470;
+	const REVEAL = 680;
 	let phase = $state("idle"); // idle | cover | reveal
 
 	const reduce = () =>
@@ -41,7 +41,9 @@
 	data-phase={phase}
 	aria-hidden="true"
 >
-	<div class="veil-sheet"></div>
+	<div class="veil-sheet">
+		<div class="veil-sparks"></div>
+	</div>
 </div>
 
 <div class="gallery min-h-screen">

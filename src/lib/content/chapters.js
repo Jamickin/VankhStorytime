@@ -33,7 +33,7 @@ function clean(raw) {
 			if (/^-{3,}$/.test(t))
 				return false; // rules
 			if (
-				/^_?\[?\s*to be continued/i.test(
+				/^_?\[?\s*(to be continued|end of part)/i.test(
 					t
 				)
 			)

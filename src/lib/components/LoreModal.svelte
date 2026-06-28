@@ -2,8 +2,7 @@
 	import { fade, scale } from "svelte/transition";
 	import { cubicOut } from "svelte/easing";
 	import { categoryStyle } from "$lib/ui.js";
-	import { chapterIndex } from "$lib/content/chapters.js";
-	import { furthestChapter } from "$lib/progress.js";
+	import { visited } from "$lib/progress.js";
 	import LoreImage from "./LoreImage.svelte";
 
 	// `entry` is the lore object to show, or null when closed.
@@ -19,10 +18,8 @@
 	// based on how far they've read.
 	let unlocked = $derived(
 		entry
-			? entry.reveals.filter(
-					(r) =>
-						chapterIndex(r.at) <=
-						$furthestChapter
+			? entry.reveals.filter((r) =>
+					$visited.has(r.at)
 				)
 			: []
 	);

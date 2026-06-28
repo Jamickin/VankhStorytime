@@ -53,6 +53,50 @@ export const lore = [
 				at: "1-2",
 				text: "A Cicillian executive, designation G-R-E-S-S-6-3-1, unused to anything less than luxury transport. On her first raw crossing she nearly succumbs to Dilation Hysteria, and is pulled back only by the rhythm Pro taps out against the deck plates.",
 			},
+			{
+				at: "2-1",
+				text: "She disembarks at Nexus Station shaken and out of her depth — a corporate executive adrift in the in-between. Pro steers her toward the concourses where her augmentations are safest, blue for Cicillian and never the orange, and parts from her at the threshold between his world and hers.",
+			},
+		],
+	},
+	{
+		id: "lin",
+		term: "Lin",
+		aliases: [
+			"L-I-N-3-8-2",
+			"Supervisor Lin",
+		],
+		category: "Character",
+		image: null,
+		tagline:
+			"Corporate oversight, down to the decimal",
+		reveals: [
+			{
+				at: "2-1",
+				text: "A Cicillian administrator threaded with mathematical enhancements — grid-like patterns of precision modification beneath her skin, calculation arrays that brighten at her temples whenever she speaks. Under a new corporate policy she has been set to oversee every independent contractor in the sector, and she takes a close, analytical interest in Pro's non-standard tools and the irregular methods behind them.",
+			},
+		],
+	},
+	{
+		id: "the-mechanic",
+		term: "the Mechanic",
+		aliases: [
+			"Mechanic",
+			"A-U-G-I-1-1-2",
+		],
+		category: "Character",
+		image: null,
+		tagline:
+			"Augmentations — official, and otherwise",
+		reveals: [
+			{
+				at: "1-1",
+				text: "An augmentation specialist who works out of Nexus Station behind the front of a nutrition dispensary. From her Pro buys his mother's black-market medicine — the anti-rejection compounds the Church of Purity has put beyond legal reach. A master of her trade, modified so far past her origins that little of her first face remains.",
+			},
+			{
+				at: "2-2",
+				text: "She trades in information as readily as in flesh, an augur of things half-known. \"The universe operates on many rhythms, technician,\" she tells Pro as she seals his package. \"The Vankh pulse is merely the most obvious.\" A heresy spoken so lightly he nearly misses how vast it is.",
+			},
 		],
 	},
 	{
@@ -136,6 +180,10 @@ export const lore = [
 				at: "1-3",
 				text: "Pro comes to suspect its relentless push for enhancement is something colder than progress — a harvest, every implant quietly reporting data to destinations no one names.",
 			},
+			{
+				at: "2-1",
+				text: "Its grip tightens. A new policy puts every independent contractor under direct oversight — mathematical supervisors like Lin assigned to catalogue each off-books job, each non-standard tool, each deviation from procedure. Quality assurance, they call it; it reads more like a net being drawn slowly closed.",
+			},
 		],
 	},
 	{
@@ -149,6 +197,10 @@ export const lore = [
 			{
 				at: "1-1",
 				text: "The neutral hub between Cicillian and Purist space, its concourses colour-marked so a traveller knows where they are safest — orange for the Purists, blue for Cicillian. Pro frequents it between official and off-the-books work, buys his mother's medicine here, and knows it as the home and workplace of The Mechanic.",
+			},
+			{
+				at: "2-1",
+				text: "Seen up close, the station's body is an argument in metal and stone: Cicillian sections that gleam and seem to flow, independent additions bolted on at hard utilitarian angles, Purist enclaves left deliberately dim and rough. Beneath the public concourses runs a maintenance underworld of conduit and exposed infrastructure — the hidden labour that holds the seamless world above aloft, which both factions lean on while pretending it isn't there.",
 			},
 		],
 	},
@@ -187,6 +239,21 @@ export const lore = [
 			{
 				at: "1-3",
 				text: "The Eye begins to seem less an absence than a presence: something that watches, calculates, and answers Pro's scans with a recognition signal — an acknowledgment that he has begun to see.",
+			},
+		],
+	},
+	{
+		id: "correspondence",
+		term: "Correspondence",
+		aliases: [],
+		category: "Concept",
+		image: null,
+		tagline:
+			"As above, so below; as below, so above",
+		reveals: [
+			{
+				at: "2-1",
+				text: "The principle Pro begins to read in everything: that the pattern at the smallest scale and the pattern at the largest are the same pattern. An old hull says it plainly — uniform mineral signatures, sub-light impact angles, the meteorite wounds of a single small region of space where the flight logs claim light-years. The scale of their civilization is a fiction. Something has drawn a small box around them and painted the inside of it to look like the sky.",
 			},
 		],
 	},
@@ -230,6 +297,10 @@ export const lore = [
 			{
 				at: "1-3",
 				text: "The readings hint the true distances are a fiction — the journeys far more constrained and controlled than any corporate specification admits.",
+			},
+			{
+				at: "2-1",
+				text: "The scarred hull turns the hint to near-certainty: uniform mineral signatures and sub-light impact angles, damage that belongs to one small neighbourhood of space rather than the light-years the logs record. Whatever FTL truly is, it is not carrying them nearly as far as they have been told.",
 			},
 		],
 	},
