@@ -1,0 +1,4 @@
+# SPA fallback for Netlify: serve the client router's fallback page for any
+# path that isn't a real static asset (real files take precedence). 200 = rewrite,
+# so the URL is preserved and the SvelteKit router handles deep links / refreshes.
+/*    /200.html    200
