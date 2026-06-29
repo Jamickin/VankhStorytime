@@ -12,6 +12,7 @@ const files = import.meta.glob(
 );
 
 function clean(raw) {
+	raw = raw.replace(/\r\n/g, "\n").replace(/\r/g, "\n");
 	let text = raw
 		// [[Link|Alias]] -> Alias, [[Link]] -> Link
 		.replace(

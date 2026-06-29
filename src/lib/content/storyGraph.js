@@ -26,15 +26,34 @@ const PART_LABELS = {
 // Authored forks. Only chapters that diverge need an entry here.
 //   "<slug>": { choices: [ { to, label, canon, hint? }, … ] }
 // `label` is the text on the choice card; `hint` is optional sub-text. Targets
-// must be real chapter slugs (a .md in _Published). Phase 2 fills this in from
-// the alternate drafts in info/Vankh/{V1,V2,V3,Original}.
+// must be real chapter slugs (a .md in _Published). Branch chapters use sub-
+// decimal numbering (1.3.1, 1.3.2) so they sort between the fork and Part 2.
 const FORKS = {
-	// Example shape (left here as the template for the first real fork):
-	// "2-2": { choices: [
-	// 	{ to: "3-1",     label: "Report to Supervisor Lin as ordered", canon: true },
-	// 	{ to: "3-1-run", label: "Take the captain's offer and disappear", canon: false,
-	// 	  hint: "Leave corporate space behind for good." },
-	// ] },
+	// End of Part 1 — first RPG fork. Pro has seen through the illusion; the Eye
+	// has noticed him. Three paths open from that moment of recognition.
+	"1-3": {
+		choices: [
+			{
+				to: "1-3-1",
+				label: "Read the crystal. Before anything else.",
+				canon: true,
+				hint: "Some knowledge won't keep.",
+			},
+			{
+				to: "1-3-2",
+				label: "The Prophet saw something real. Find his people.",
+				canon: false,
+				hint: "Orange corridors. Dangerous territory for a technician.",
+			},
+		],
+	},
+	// Branch chapters converge back to the canon spine at 2-1.
+	"1-3-1": {
+		choices: [{ to: "2-1", label: null, canon: true }],
+	},
+	"1-3-2": {
+		choices: [{ to: "2-1", label: null, canon: true }],
+	},
 };
 
 // Next chapter in canonical (slug) order, or null at the very end.

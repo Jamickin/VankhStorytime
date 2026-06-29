@@ -67,7 +67,7 @@ export const lore = [
 			"Supervisor Lin",
 		],
 		category: "Character",
-		image: null,
+		image: "/lore/lin.png",
 		tagline:
 			"Corporate oversight, down to the decimal",
 		reveals: [
@@ -85,7 +85,7 @@ export const lore = [
 			"A-U-G-I-1-1-2",
 		],
 		category: "Character",
-		image: null,
+		image: "/lore/the_mechanic.png",
 		tagline:
 			"Augmentations — official, and otherwise",
 		reveals: [
@@ -104,7 +104,7 @@ export const lore = [
 		term: "The Prophet",
 		aliases: ["Prophet"],
 		category: "Character",
-		image: null,
+		image: "/lore/the_prophet.png",
 		tagline:
 			"Leader of the Church of Purity",
 		reveals: [
@@ -228,7 +228,7 @@ export const lore = [
 		term: "Vankh spheres",
 		aliases: ["Vankhs", "Vankh's Eye"],
 		category: "Concept",
-		image: null,
+		image: "/lore/vankh.jpeg",
 		tagline:
 			"Perfect black orbs in settled space",
 		reveals: [
@@ -335,7 +335,7 @@ export const lore = [
 			"respiratory ritual",
 		],
 		category: "Concept",
-		image: null,
+		image: "/lore/breathing_pattern.png",
 		tagline:
 			"Left lung. Right lung. Pause. Reverse.",
 		reveals: [
@@ -364,7 +364,7 @@ export const lore = [
 		term: "Pro's Mother",
 		aliases: [],
 		category: "Character",
-		image: null,
+		image: "/lore/pro_mother.png",
 		tagline:
 			"Keeper of suppressed histories",
 		reveals: [

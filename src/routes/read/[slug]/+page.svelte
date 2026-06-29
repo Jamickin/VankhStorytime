@@ -94,6 +94,10 @@
 			goPage(pageNum + 1);
 		else if (e.key === "ArrowLeft")
 			goPage(pageNum - 1);
+		else if (e.key === "End")
+			goPage(pages.length - 1);
+		else if (e.key === "Home")
+			goPage(0);
 	}
 </script>
 
@@ -254,6 +258,13 @@
 						>
 					</a>
 				{:else}
+					{#if partEnd}
+						<p
+							class="mb-3 text-center text-xs uppercase tracking-[0.3em] text-amber-500/60"
+						>
+							End of Part {part}: {partName}
+						</p>
+					{/if}
 					<p
 						class="mb-4 text-center text-sm uppercase tracking-[0.3em] text-amber-400/80"
 					>
