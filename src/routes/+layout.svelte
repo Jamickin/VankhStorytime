@@ -1,7 +1,10 @@
 <script>
 	import "../app.css";
+	import { onMount } from "svelte";
 	import { onNavigate } from "$app/navigation";
 	import FloatingSidebar from "$lib/components/FloatingSidebar.svelte";
+	import LoreModal from "$lib/components/LoreModal.svelte";
+	import { loreEntry, closeLore } from "$lib/stores/lorePanel.js";
 
 	let { children } = $props();
 
@@ -149,6 +152,14 @@
 		}
 	}
 
+	onMount(() => {
+		const splash = document.getElementById('vankh-splash');
+		if (splash) {
+			// Small delay so the fonts have a moment to load
+			setTimeout(() => splash.classList.add('dismissed'), 120);
+		}
+	});
+
 	onNavigate((navigation) => {
 		if (navigation.from?.url.pathname === navigation.to?.url.pathname) return;
 		if (animFrame !== null) return;
@@ -257,4 +268,6 @@
 	<main>
 		{@render children()}
 	</main>
+
+	<LoreModal entry={$loreEntry} onclose={closeLore} />
 </div>

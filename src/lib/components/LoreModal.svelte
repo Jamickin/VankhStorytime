@@ -1,18 +1,13 @@
 <script>
 	import { fade, scale } from "svelte/transition";
 	import { cubicOut } from "svelte/easing";
-	import { categoryStyle } from "$lib/ui.js";
 	import { visited } from "$lib/progress.js";
 	import LoreImage from "./LoreImage.svelte";
+	import CategoryChip from "./CategoryChip.svelte";
+	import SealedReveal from "./SealedReveal.svelte";
 
 	// `entry` is the lore object to show, or null when closed.
 	let { entry, onclose } = $props();
-
-	let style = $derived(
-		entry
-			? categoryStyle(entry.category)
-			: null
-	);
 
 	// Split reveals into what the reader has earned and what stays sealed,
 	// based on how far they've read.
@@ -45,7 +40,7 @@
 		transition:fade={{ duration: 200 }}
 	>
 		<div
-			class="relative w-full max-w-lg overflow-hidden rounded-sm bg-[#1a140e] frame"
+			class="relative w-full max-w-lg overflow-hidden rounded-sm bg-surface-raised frame"
 			role="dialog"
 			aria-modal="true"
 			aria-label={entry.term}
@@ -64,7 +59,7 @@
 			>
 				<LoreImage {entry} />
 				<div
-					class="absolute inset-0 bg-gradient-to-t from-[#1a140e] via-[#1a140e]/10 to-transparent"
+					class="absolute inset-0 bg-gradient-to-t from-surface-raised via-surface-raised/10 to-transparent"
 				></div>
 				<button
 					class="absolute top-3 right-3 grid h-8 w-8 place-items-center rounded-full bg-black/50 text-stone-200 hover:bg-black/70 hover:text-white"
@@ -74,11 +69,7 @@
 			</div>
 
 			<div class="px-7 pb-7 -mt-8 relative">
-				<span
-					class="inline-block mb-2 rounded-full px-2.5 py-0.5 text-[11px] font-semibold uppercase tracking-[0.18em] ring-1 {style.chip}"
-				>
-					{entry.category}
-				</span>
+				<CategoryChip category={entry.category} class="mb-2" />
 				<h2
 					class="text-2xl font-bold tracking-wide text-stone-50"
 				>
@@ -108,22 +99,7 @@
 					{/if}
 
 					{#if sealedCount > 0}
-						<div
-							class="mt-2 flex items-center gap-2 rounded-md border border-amber-900/40 bg-amber-950/20 px-3 py-2 text-sm text-amber-200/70"
-						>
-							<span aria-hidden="true"
-								>🔒</span
-							>
-							<span
-								>{sealedCount} more {sealedCount ===
-								1
-									? "truth lies"
-									: "truths lie"} sealed here — read on to uncover {sealedCount ===
-								1
-									? "it"
-									: "them"}.</span
-							>
-						</div>
+						<SealedReveal count={sealedCount} />
 					{/if}
 				</div>
 			</div>

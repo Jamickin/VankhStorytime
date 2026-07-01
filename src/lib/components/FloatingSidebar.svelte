@@ -6,7 +6,7 @@
 </script>
 
 <aside
-	class="fixed left-3 top-3 z-30 flex flex-col gap-0.5 rounded-2xl border border-amber-900/20 bg-[#1a1108]/70 p-2 opacity-100 backdrop-blur-md transition-opacity duration-300 md:top-1/2 md:-translate-y-1/2 md:opacity-50 md:hover:opacity-100"
+	class="fixed left-3 top-3 z-30 flex flex-col gap-0.5 rounded-2xl border border-amber-900/20 bg-surface-overlay/70 p-2 opacity-100 backdrop-blur-md transition-opacity duration-300 md:top-1/2 md:-translate-y-1/2 md:opacity-50 md:hover:opacity-100"
 >
 	<!-- Read / Home -->
 	<a

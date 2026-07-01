@@ -15,13 +15,11 @@
 		partOf,
 		partLabel,
 	} from "$lib/content/storyGraph.js";
-	import {
-		lore,
-		loreById,
-	} from "$lib/content/lore.js";
+	import { lore } from "$lib/content/lore.js";
 	import { visit } from "$lib/progress.js";
 	import ProseReader from "$lib/components/ProseReader.svelte";
-	import LoreModal from "$lib/components/LoreModal.svelte";
+	import ChapterCard from "$lib/components/ChapterCard.svelte";
+	import { openLore } from "$lib/stores/lorePanel.js";
 
 	let slug = $derived($page.params.slug);
 	let chapter = $derived(
@@ -68,12 +66,6 @@
 		pageNum = 0;
 	});
 
-	let selected = $state(null);
-	function open(id) {
-		selected =
-			loreById.get(id) || null;
-	}
-
 	function goPage(n) {
 		const target = Math.max(
 			0,
@@ -89,7 +81,6 @@
 	}
 
 	function onkeydown(e) {
-		if (selected) return; // let the modal own keys while open
 		if (e.key === "ArrowRight")
 			goPage(pageNum + 1);
 		else if (e.key === "ArrowLeft")
@@ -142,7 +133,7 @@
 						pageNum
 					] || []}
 					{lore}
-					onselect={open}
+					onselect={openLore}
 				/>
 			</div>
 		{/key}
@@ -217,9 +208,7 @@
 					</a>
 				{:else if choices.length === 1}
 					{@const only = choices[0]}
-					{@const target = getChapter(
-						only.to
-					)}
+					{@const target = getChapter(only.to)}
 					{#if partEnd}
 						<p
 							class="mb-4 text-center text-xs uppercase tracking-[0.3em] text-amber-500/60"
@@ -227,36 +216,11 @@
 							End of Part {part}: {partName}
 						</p>
 					{/if}
-					<a
-						href={`/read/${only.to}`}
-						class="group flex items-center justify-between gap-4 rounded-xl border border-amber-900/30 bg-gradient-to-r from-amber-950/30 to-transparent px-6 py-5 transition-colors hover:border-amber-600/50 hover:from-amber-900/30"
-					>
-						<span>
-							<span
-								class="block text-xs uppercase tracking-[0.2em] text-amber-500/70"
-							>
-								{#if partEnd && target}Begin
-									Part {partOf(
-										only.to
-									)}: {partLabel(
-										partOf(only.to)
-									)}{:else}Continue
-									reading{/if}
-							</span>
-							<span
-								class="text-lg font-light text-stone-100 group-hover:text-amber-50"
-							>
-								{only.label ??
-									(target
-										? `${target.number} · ${target.title}`
-										: only.to)}
-							</span>
-						</span>
-						<span
-							class="text-2xl text-amber-400 transition-transform group-hover:translate-x-1"
-							>→</span
-						>
-					</a>
+					<ChapterCard
+						choice={only}
+						heading={partEnd && target ? `Begin Part ${partOf(only.to)}: ${partLabel(partOf(only.to))}` : 'Continue reading'}
+						{target}
+					/>
 				{:else}
 					{#if partEnd}
 						<p
@@ -272,33 +236,8 @@
 					</p>
 					<div class="space-y-3">
 						{#each choices as choice}
-							{@const target =
-								getChapter(choice.to)}
-							<a
-								href={`/read/${choice.to}`}
-								class="group flex items-center justify-between gap-4 rounded-xl border border-amber-900/30 bg-gradient-to-r from-amber-950/30 to-transparent px-6 py-5 transition-colors hover:border-amber-600/50 hover:from-amber-900/30"
-							>
-								<span>
-									<span
-										class="text-lg font-light text-stone-100 group-hover:text-amber-50"
-									>
-										{choice.label ??
-											(target
-												? `${target.number} · ${target.title}`
-												: choice.to)}
-									</span>
-									{#if choice.hint}
-										<span
-											class="mt-0.5 block text-xs text-stone-400"
-											>{choice.hint}</span
-										>
-									{/if}
-								</span>
-								<span
-									class="text-2xl text-amber-400 transition-transform group-hover:translate-x-1"
-									>→</span
-								>
-							</a>
+							{@const target = getChapter(choice.to)}
+							<ChapterCard {choice} {target} />
 						{/each}
 					</div>
 				{/if}
@@ -319,8 +258,4 @@
 		{/if}
 	</article>
 
-	<LoreModal
-		entry={selected}
-		onclose={() => (selected = null)}
-	/>
 {/if}

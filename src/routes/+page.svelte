@@ -72,7 +72,7 @@
 	{#if resume}
 		<a
 			href={`/read/${resume}`}
-			class="mt-8 inline-block rounded-full bg-gradient-to-b from-amber-400 to-amber-600 px-8 py-3 font-semibold text-[#1a140e] shadow-lg shadow-amber-900/40 transition-transform hover:scale-105"
+			class="mt-8 inline-block rounded-full bg-gradient-to-b from-amber-400 to-amber-600 px-8 py-3 font-semibold text-surface-raised shadow-lg shadow-amber-900/40 transition-transform hover:scale-105"
 		>
 			{#if !started}Begin reading →{:else}Continue
 				· {resumeChapter?.number} →{/if}

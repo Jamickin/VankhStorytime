@@ -1,5 +1,14 @@
 @import "tailwindcss";
 
+@theme {
+  --color-surface:         #14100c;
+  --color-surface-raised:  #1a140e;
+  --color-surface-overlay: #1a1108;
+  --color-char:            #0d0905;
+  --color-ink:             #e7e1d6;
+  --color-ember:           #f4d59a;
+}
+
 :root {
 	font-family: "Montserrat", system-ui,
 		sans-serif;
@@ -10,8 +19,8 @@ html {
 }
 
 body {
-	background-color: #14100c; /* deep umber-black, like a dark gallery wall */
-	color: #e7e1d6;
+	background-color: var(--color-surface); /* deep umber-black, like a dark gallery wall */
+	color: var(--color-ink);
 	font-family: "Montserrat", system-ui,
 		sans-serif;
 }
@@ -29,7 +38,7 @@ body {
 			rgba(124, 45, 18, 0.08),
 			transparent 50%
 		),
-		#14100c;
+		var(--color-surface);
 	position: relative;
 }
 .gallery::before {

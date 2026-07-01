@@ -1,8 +1,8 @@
 <script>
 	import { lore } from "$lib/content/lore.js";
-	import { categoryStyle } from "$lib/ui.js";
 	import LoreImage from "$lib/components/LoreImage.svelte";
-	import LoreModal from "$lib/components/LoreModal.svelte";
+	import CategoryChip from "$lib/components/CategoryChip.svelte";
+	import { openLore } from "$lib/stores/lorePanel.js";
 
 	const order = [
 		"Character",
@@ -19,8 +19,6 @@
 			),
 		}))
 		.filter((g) => g.entries.length);
-
-	let selected = $state(null);
 </script>
 
 <section
@@ -52,8 +50,7 @@
 			{#each group.entries as entry (entry.id)}
 				<button
 					class="group text-left transition-transform hover:-translate-y-1"
-					onclick={() =>
-						(selected = entry)}
+					onclick={() => openLore(entry)}
 				>
 					<div
 						class="frame h-32 w-full overflow-hidden rounded-sm"
@@ -61,13 +58,7 @@
 						<LoreImage {entry} />
 					</div>
 					<div class="px-1 pt-3">
-						<span
-							class="inline-block mb-1.5 rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.15em] ring-1 {categoryStyle(
-								entry.category
-							).chip}"
-						>
-							{entry.category}
-						</span>
+						<CategoryChip category={entry.category} class="mb-1.5" />
 						<h3
 							class="font-semibold tracking-wide text-stone-100 group-hover:text-amber-100"
 						>
@@ -86,8 +77,3 @@
 		</div>
 	{/each}
 </section>
-
-<LoreModal
-	entry={selected}
-	onclose={() => (selected = null)}
-/>
