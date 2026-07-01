@@ -268,6 +268,6 @@
 	<main>
 		{@render children()}
 	</main>
-
-	<LoreModal entry={$loreEntry} onclose={closeLore} />
 </div>
+
+<LoreModal entry={$loreEntry} onclose={closeLore} />
