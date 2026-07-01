@@ -155,3 +155,15 @@ for (const ch of chapters) {
 	entries.sort((a, b) => (CAT_ORDER[a.category] ?? 4) - (CAT_ORDER[b.category] ?? 4));
 	lorePerChapter.set(ch.slug, entries.slice(0, 3));
 }
+
+// Entries whose FIRST REVEAL is at this chapter — what this chapter introduces.
+// Satellite thumbnails use this so each chapter shows unique characters/concepts.
+export const introPerChapter = new Map();
+for (const ch of chapters) {
+	const entries = lore.filter(e => e.reveals[0]?.at === ch.slug);
+	entries.sort((a, b) => (CAT_ORDER[a.category] ?? 4) - (CAT_ORDER[b.category] ?? 4));
+	introPerChapter.set(
+		ch.slug,
+		entries.length > 0 ? entries.slice(0, 3) : (lorePerChapter.get(ch.slug) ?? []).slice(0, 2)
+	);
+}
