@@ -14,7 +14,8 @@
 	</head>
 	<body data-sveltekit-preload-data="hover">
 		<div id="vankh-splash" aria-hidden="true">
-  <img src="/logo.webp" alt="VANKH" />
+  <div class="splash-wordmark">VANKH</div>
+  <canvas id="splash-canvas" aria-hidden="true"></canvas>
 </div>
 <style>
   #vankh-splash {
@@ -25,18 +26,29 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    transition: opacity 0.5s ease, visibility 0.5s ease;
+    flex-direction: column;
   }
-  #vankh-splash img {
-    width: 130px;
-    height: 130px;
-    object-fit: contain;
-    opacity: 0.92;
+  .splash-wordmark {
+    font-family: 'Montserrat', system-ui, sans-serif;
+    font-size: 3rem;
+    font-weight: 800;
+    letter-spacing: 0.22em;
+    color: #d99f56;
+    position: relative;
+    z-index: 1;
+    pointer-events: none;
+    user-select: none;
+  }
+  #splash-canvas {
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: 0;
   }
   #vankh-splash.dismissed {
     opacity: 0;
-    visibility: hidden;
     pointer-events: none;
+    transition: opacity 400ms ease;
   }
 </style>
 		<div style="display: contents">%sveltekit.body%</div>
