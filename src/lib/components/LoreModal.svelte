@@ -1,7 +1,9 @@
 <script>
 	import { fade, scale } from "svelte/transition";
 	import { cubicOut } from "svelte/easing";
-	import { visited } from "$lib/progress.js";
+	import { goto } from "$app/navigation";
+	import { visited, loreRecords, getLoreRecord } from "$lib/progress.js";
+	import { chapterIndex } from "$lib/content/chapters.js";
 	import LoreImage from "./LoreImage.svelte";
 	import CategoryChip from "./CategoryChip.svelte";
 	import SealedReveal from "./SealedReveal.svelte";
@@ -9,14 +11,21 @@
 	// `entry` is the lore object to show, or null when closed.
 	let { entry, onclose } = $props();
 
-	// Split reveals into what the reader has earned and what stays sealed,
-	// based on how far they've read.
+	// Split reveals into what the reader has earned and what stays sealed.
+	// A reveal is unlocked when:
+	//   1. The reader has visited that chapter (chapter is in their journey), AND
+	//   2. The reader has clicked this lore word in or after that reveal's chapter
+	//      (the record's lastChapter is at or past the reveal chapter).
 	let unlocked = $derived(
-		entry
-			? entry.reveals.filter((r) =>
-					$visited.has(r.at)
-				)
-			: []
+		(() => {
+			if (!entry) return [];
+			const record = getLoreRecord(entry.id);
+			return entry.reveals.filter(r => {
+				if (!$visited.has(r.at)) return false;
+				if (!record?.lastChapter) return false;
+				return chapterIndex(record.lastChapter) >= chapterIndex(r.at);
+			});
+		})()
 	);
 	let sealedCount = $derived(
 		entry
@@ -101,6 +110,15 @@
 					{#if sealedCount > 0}
 						<SealedReveal count={sealedCount} />
 					{/if}
+				</div>
+
+				<div class="mt-6 flex justify-end">
+					<button
+						class="text-sm text-amber-400/70 hover:text-amber-300 border border-amber-900/40 hover:border-amber-600/60 rounded-full px-4 py-1.5 transition-colors"
+						onclick={() => { onclose(); goto(`/codex/${entry.id}`); }}
+					>
+						View full entry in Codex →
+					</button>
 				</div>
 			</div>
 		</div>

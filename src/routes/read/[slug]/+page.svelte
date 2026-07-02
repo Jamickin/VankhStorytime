@@ -16,7 +16,13 @@
 		partLabel,
 	} from "$lib/content/storyGraph.js";
 	import { lore } from "$lib/content/lore.js";
-	import { visit } from "$lib/progress.js";
+	import {
+		visit,
+		complete,
+		savePageNum,
+		getSavedPageNum,
+		currentReadingSlug,
+	} from "$lib/progress.js";
 	import ProseReader from "$lib/components/ProseReader.svelte";
 	import ChapterCard from "$lib/components/ChapterCard.svelte";
 	import { openLore } from "$lib/stores/lorePanel.js";
@@ -60,10 +66,26 @@
 		visit(slug);
 	});
 
-	// Reset to the first page whenever the chapter changes.
+	// Keep the lore panel store aware of which chapter is open.
+	$effect(() => {
+		currentReadingSlug.set(slug);
+	});
+
+	// Restore the saved page position when the chapter changes.
+	// Depends only on slug so it doesn't fight the save effect.
 	$effect(() => {
 		slug;
-		pageNum = 0;
+		pageNum = getSavedPageNum(slug);
+	});
+
+	// Save page position whenever it changes.
+	$effect(() => {
+		savePageNum(slug, pageNum);
+	});
+
+	// Mark a chapter as fully completed when the reader reaches the last page.
+	$effect(() => {
+		if (onLastPage) complete(slug);
 	});
 
 	function goPage(n) {
