@@ -163,17 +163,28 @@
 	// ── Ambient drift ────────────────────────────────────────────────────────
 	let driftT = $state(0);
 	let driftRaf;
+	let isMobile = $state(false);
 
 	onMount(() => {
-		if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
-		let prev;
-		function loop(ts) {
-			if (prev !== undefined) driftT += (ts - prev) * 0.001;
-			prev = ts;
+		const mql = window.matchMedia('(max-width: 640px)');
+		isMobile = mql.matches;
+		const onMql = (e) => { isMobile = e.matches; };
+		mql.addEventListener('change', onMql);
+
+		if (!window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+			let prev;
+			function loop(ts) {
+				if (prev !== undefined) driftT += (ts - prev) * 0.001;
+				prev = ts;
+				driftRaf = requestAnimationFrame(loop);
+			}
 			driftRaf = requestAnimationFrame(loop);
 		}
-		driftRaf = requestAnimationFrame(loop);
-		return () => cancelAnimationFrame(driftRaf);
+
+		return () => {
+			mql.removeEventListener('change', onMql);
+			if (driftRaf) cancelAnimationFrame(driftRaf);
+		};
 	});
 
 	function nodePhase(slug) {
@@ -350,11 +361,11 @@
 	}
 </script>
 
-<div bind:this={container} class="relative">
+<div bind:this={container} class="relative" class:mobile-scale={isMobile}>
 	<svg
 		bind:this={svgEl}
 		viewBox="0 0 {VBOX_W} {totalH}"
-		class="w-full"
+		class="w-full timeline-svg"
 		preserveAspectRatio="xMidYMin meet"
 		aria-label="Story timeline"
 	>
@@ -630,7 +641,8 @@
 		{@const inMystery = mystery().has(hovered.slug)}
 		{@const vis = $visited.has(hovered.slug)}
 		{@const entries = lorePerChapter.get(hovered.slug) ?? []}
-		{#if ch && !inMystery}
+		{#if ch && vis}
+			<!-- Visited: full card with snippet and lore -->
 			{@const TW = 300}
 			{@const cW = container?.clientWidth ?? 520}
 			{@const tx = hovered.x + 30 + TW > cW ? hovered.x - TW - 22 : hovered.x + 30}
@@ -644,13 +656,11 @@
 					<div class="card-banner">
 						<LoreImage entry={banner} />
 						<div class="card-banner-fade"></div>
-						{#if vis}
-							<span class="card-read-badge">✦ read</span>
-						{/if}
+						<span class="card-read-badge">✦ read</span>
 					</div>
 				{:else}
 					<div class="card-banner-empty">
-						{#if vis}<span class="card-read-badge-plain">✦ read</span>{/if}
+						<span class="card-read-badge-plain">✦ read</span>
 					</div>
 				{/if}
 				<div class="card-body">
@@ -669,7 +679,22 @@
 					{/if}
 				</div>
 			</div>
+		{:else if ch && !inMystery}
+			<!-- Frontier (reachable but unread): title only, no spoilers -->
+			{@const TW = 220}
+			{@const cW = container?.clientWidth ?? 520}
+			{@const tx = hovered.x + 30 + TW > cW ? hovered.x - TW - 22 : hovered.x + 30}
+			{@const ty = Math.max(8, hovered.y - 50)}
+			<div
+				class="frontier-card"
+				style="left:{tx}px;top:{ty}px;width:{TW}px;"
+			>
+				<p class="frontier-ch-num">Chapter {ch.number}</p>
+				<p class="frontier-ch-title">{ch.title}</p>
+				<p class="frontier-cta">→ Begin reading</p>
+			</div>
 		{:else if ch && inMystery}
+			<!-- Mystery: fully sealed -->
 			{@const TW = 200}
 			{@const cW = container?.clientWidth ?? 520}
 			{@const tx = hovered.x + 30 + TW > cW ? hovered.x - TW - 22 : hovered.x + 30}
@@ -830,6 +855,41 @@
 		margin-right: 4px;
 	}
 
+	/* Frontier card (reachable but unread — no spoilers) */
+	.frontier-card {
+		pointer-events: none;
+		position: absolute;
+		z-index: 20;
+		border-radius: 0.75rem;
+		padding: 12px 16px;
+		border: 1px solid rgba(100, 70, 30, 0.25);
+		background: rgba(20, 13, 7, 0.96);
+		backdrop-filter: blur(14px);
+		-webkit-backdrop-filter: blur(14px);
+		box-shadow: 0 12px 32px rgba(0, 0, 0, 0.5);
+	}
+	.frontier-ch-num {
+		font-family: 'Montserrat', monospace;
+		font-size: 8.5px;
+		text-transform: uppercase;
+		letter-spacing: 0.22em;
+		color: rgba(180, 100, 30, 0.5);
+		margin: 0;
+	}
+	.frontier-ch-title {
+		font-size: 13px;
+		font-weight: 600;
+		color: rgba(180, 170, 155, 0.7);
+		margin: 3px 0 0;
+		letter-spacing: 0.02em;
+	}
+	.frontier-cta {
+		font-size: 10px;
+		color: rgba(251, 191, 36, 0.45);
+		margin: 8px 0 0;
+		letter-spacing: 0.06em;
+	}
+
 	/* Mystery card */
 	.mystery-card {
 		pointer-events: none;
@@ -947,5 +1007,16 @@
 	:global(.sat-thumb .impasto span) {
 		font-size: 0.75rem !important;
 		letter-spacing: 0.04em;
+	}
+
+	/* Mobile: render the timeline SVG at 150% so nodes and edges are readable */
+	.mobile-scale {
+		overflow-x: auto;
+		overflow-y: visible;
+		-webkit-overflow-scrolling: touch;
+	}
+	:global(.mobile-scale .timeline-svg) {
+		width: 150% !important;
+		min-width: 150% !important;
 	}
 </style>

@@ -3,6 +3,7 @@
 	import LoreImage from "$lib/components/LoreImage.svelte";
 	import CategoryChip from "$lib/components/CategoryChip.svelte";
 	import { openLore } from "$lib/stores/lorePanel.js";
+	import { openedLore } from "$lib/progress.js";
 
 	const order = [
 		"Character",
@@ -10,15 +11,22 @@
 		"Place",
 		"Concept",
 	];
-	const groups = order
-		.map((category) => ({
-			category,
-			entries: lore.filter(
-				(e) =>
-					e.category === category
-			),
-		}))
-		.filter((g) => g.entries.length);
+
+	// Only entries the reader has opened by clicking.
+	let discovered = $derived(
+		lore.filter((e) => $openedLore.includes(e.id))
+	);
+
+	let groups = $derived(
+		order
+			.map((category) => ({
+				category,
+				entries: discovered.filter(
+					(e) => e.category === category
+				),
+			}))
+			.filter((g) => g.entries.length)
+	);
 </script>
 
 <section
@@ -33,47 +41,57 @@
 		class="mt-2 max-w-xl font-light text-stone-400"
 	>
 		The people, powers, and places of
-		VANKH — painted from the shadows. Each
-		holds only what you've read far enough
-		to know; the rest stays sealed.
+		VANKH — painted from the shadows. Entries
+		appear as you discover them. Each holds only
+		what you've read far enough to know; the rest
+		stays sealed.
 	</p>
 
-	{#each groups as group}
-		<h2
-			class="mt-12 mb-4 text-xs font-semibold uppercase tracking-[0.3em] text-stone-500"
-		>
-			{group.category}
-		</h2>
-		<div
-			class="grid gap-5 sm:grid-cols-2 lg:grid-cols-3"
-		>
-			{#each group.entries as entry (entry.id)}
-				<button
-					class="group text-left transition-transform hover:-translate-y-1"
-					onclick={() => openLore(entry)}
-				>
-					<div
-						class="frame h-32 w-full overflow-hidden rounded-sm"
-					>
-						<LoreImage {entry} />
-					</div>
-					<div class="px-1 pt-3">
-						<CategoryChip category={entry.category} class="mb-1.5" />
-						<h3
-							class="font-semibold tracking-wide text-stone-100 group-hover:text-amber-100"
-						>
-							{entry.term}
-						</h3>
-						{#if entry.tagline}
-							<p
-								class="mt-0.5 text-sm font-light text-stone-400 line-clamp-1"
-							>
-								{entry.tagline}
-							</p>
-						{/if}
-					</div>
-				</button>
-			{/each}
+	{#if groups.length === 0}
+		<div class="mt-16 text-center">
+			<p class="text-stone-600 text-sm italic leading-relaxed">
+				Nothing recorded yet.<br />
+				Click a glowing name in the story to open your first entry.
+			</p>
 		</div>
-	{/each}
+	{:else}
+		{#each groups as group}
+			<h2
+				class="mt-12 mb-4 text-xs font-semibold uppercase tracking-[0.3em] text-stone-500"
+			>
+				{group.category}
+			</h2>
+			<div
+				class="grid gap-5 sm:grid-cols-2 lg:grid-cols-3"
+			>
+				{#each group.entries as entry (entry.id)}
+					<button
+						class="group text-left transition-transform hover:-translate-y-1"
+						onclick={() => openLore(entry)}
+					>
+						<div
+							class="frame h-32 w-full overflow-hidden rounded-sm"
+						>
+							<LoreImage {entry} />
+						</div>
+						<div class="px-1 pt-3">
+							<CategoryChip category={entry.category} class="mb-1.5" />
+							<h3
+								class="font-semibold tracking-wide text-stone-100 group-hover:text-amber-100"
+							>
+								{entry.term}
+							</h3>
+							{#if entry.tagline}
+								<p
+									class="mt-0.5 text-sm font-light text-stone-400 line-clamp-1"
+								>
+									{entry.tagline}
+								</p>
+							{/if}
+						</div>
+					</button>
+				{/each}
+			</div>
+		{/each}
+	{/if}
 </section>

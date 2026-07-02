@@ -12,8 +12,8 @@
 	let canvas;
 
 	// ── Fire transition ──────────────────────────────────────────────────────
-	const COVER = 540; // ms — fire sweeps bottom→top to cover the old page
-	const REVEAL = 700; // ms — fire sweeps top→bottom to clear the ash
+	const COVER = 430; // ms — fire sweeps bottom→top to cover the old page
+	const REVEAL = 560; // ms — fire sweeps top→bottom to clear the ash
 
 	const reduce = () =>
 		typeof window !== "undefined" &&
@@ -183,8 +183,10 @@
 					elapsed / COVER,
 					1
 				);
+				// Ease-out: fast sweep in, decelerates toward the top like a wave crest.
+				const ctEased = 1 - Math.pow(1 - ct, 2.4);
 				// burnY descends from H (bottom) to -35 (off-screen top)
-				const burnY = H - (H + 35) * ct;
+				const burnY = H - (H + 35) * ctEased;
 				const t = elapsed * 0.001;
 
 				ctx.clearRect(0, 0, W, H);
@@ -213,9 +215,11 @@
 						(now - rs) / REVEAL,
 						1
 					);
+					// Ease-in: slow lift off the top, accelerates like a wave breaking downward.
+					const rtEased = Math.pow(rt, 1.9);
 					// revealY rises from -35 (top) down to H (bottom)
 					const revealY =
-						(H + 35) * rt - 35;
+						(H + 35) * rtEased - 35;
 					const t = now * 0.001;
 
 					ctx.clearRect(0, 0, W, H);

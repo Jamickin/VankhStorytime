@@ -68,3 +68,35 @@ export function visit(slug) {
 		j.includes(slug) ? j : [...j, slug]
 	);
 }
+
+// ── Lore discovery: tracks which entries the reader has clicked ──────────────
+const LORE_KEY = "vankh:lore:v1";
+
+function loadLore() {
+	if (!browser) return [];
+	try {
+		const raw = localStorage.getItem(LORE_KEY);
+		if (raw) {
+			const arr = JSON.parse(raw);
+			if (Array.isArray(arr))
+				return arr.filter((s) => typeof s === "string");
+		}
+	} catch { /* ignore */ }
+	return [];
+}
+
+// Ordered list of lore entry IDs the reader has opened the modal for.
+export const openedLore = writable(loadLore());
+
+if (browser) {
+	openedLore.subscribe((ids) =>
+		localStorage.setItem(LORE_KEY, JSON.stringify(ids))
+	);
+}
+
+export function recordLoreOpen(id) {
+	if (!id) return;
+	openedLore.update((ids) =>
+		ids.includes(id) ? ids : [...ids, id]
+	);
+}
