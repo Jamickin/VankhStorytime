@@ -1,6 +1,7 @@
 <script>
 	import { goto } from "$app/navigation";
 	import { onMount } from "svelte";
+	import { browser } from "$app/environment";
 	import { findConcepts } from "$lib/conceptParser.js";
 	import {
 		lore,
@@ -185,6 +186,82 @@
 		return 7 * Math.sin(((2 * Math.PI) * driftT) / 18 + nodePhase(slug));
 	}
 
+	// ── Drag-to-reposition nodes ────────────────────────────────────────────
+	const LAYOUT_KEY = "vankh:layout:v1";
+	let dragOffsets = $state(
+		(() => {
+			if (!browser) return new Map();
+			try {
+				return new Map(
+					JSON.parse(localStorage.getItem(LAYOUT_KEY)) ?? []
+				);
+			} catch {
+				return new Map();
+			}
+		})()
+	);
+
+	function saveDragOffsets() {
+		if (browser)
+			localStorage.setItem(
+				LAYOUT_KEY,
+				JSON.stringify([...dragOffsets])
+			);
+	}
+
+	// { slug, startX, startY, origDx, origDy, moved }
+	let dragging = $state(null);
+	// Set to true on pointerup when a drag actually moved; cleared after onclick fires.
+	let suppressNextClick = $state(false);
+
+	function onNodePointerDown(e, slug) {
+		// Only left button
+		if (e.button !== 0) return;
+		e.currentTarget.setPointerCapture(e.pointerId);
+		const cur = dragOffsets.get(slug) ?? { dx: 0, dy: 0 };
+		suppressNextClick = false;
+		dragging = {
+			slug,
+			startX: e.clientX,
+			startY: e.clientY,
+			origDx: cur.dx,
+			origDy: cur.dy,
+			moved: false,
+		};
+	}
+
+	function onSvgPointerMove(e) {
+		if (!dragging || !svgEl) return;
+		const rect = svgEl.getBoundingClientRect();
+		const scale = VBOX_W / rect.width;
+		const ddx = (e.clientX - dragging.startX) * scale;
+		const ddy = (e.clientY - dragging.startY) * scale;
+		if (Math.abs(ddx) > 2 || Math.abs(ddy) > 2) {
+			dragging.moved = true;
+		}
+		const newDx = dragging.origDx + ddx;
+		const newDy = dragging.origDy + ddy;
+		// Update the map — reassign to trigger reactivity
+		const next = new Map(dragOffsets);
+		next.set(dragging.slug, { dx: newDx, dy: newDy });
+		dragOffsets = next;
+	}
+
+	function onSvgPointerUp(e) {
+		if (!dragging) return;
+		const wasMoved = dragging.moved;
+		dragging = null;
+		if (wasMoved) {
+			saveDragOffsets();
+			suppressNextClick = true;
+		}
+	}
+
+	function resetLayout() {
+		dragOffsets = new Map();
+		saveDragOffsets();
+	}
+
 	// ── SVG path generation ─────────────────────────────────────────────────
 	function spineD(x1, y1, x2, y2) {
 		const dy = y2 - y1;
@@ -213,18 +290,22 @@
 		return `M ${x1} ${y1} C ${cx1} ${cy1}, ${cx2} ${cy2}, ${x2} ${y2}`;
 	}
 
-	// Edges use driftX so strings visually follow their nodes
+	// Edges use driftX + drag offsets so strings visually follow their nodes
 	function edgeD(fromSlug, toSlug) {
 		const f = nodePos.get(fromSlug);
 		const t = nodePos.get(toSlug);
 		if (!f || !t) return "";
-		const fx = f.x + driftX(fromSlug);
-		const tx = t.x + driftX(toSlug);
+		const fOff = dragOffsets.get(fromSlug) ?? { dx: 0, dy: 0 };
+		const tOff = dragOffsets.get(toSlug) ?? { dx: 0, dy: 0 };
+		const fx = f.x + driftX(fromSlug) + fOff.dx;
+		const fy = f.y + fOff.dy;
+		const tx = t.x + driftX(toSlug) + tOff.dx;
+		const ty = t.y + tOff.dy;
 		if (!f.isBranch && t.isBranch)
-			return branchOutD(fx, f.y, tx, t.y);
+			return branchOutD(fx, fy, tx, ty);
 		if (f.isBranch && !t.isBranch)
-			return branchInD(fx, f.y, tx, t.y);
-		return spineD(fx, f.y, tx, t.y);
+			return branchInD(fx, fy, tx, ty);
+		return spineD(fx, fy, tx, ty);
 	}
 
 	// ── Lore per chapter ────────────────────────────────────────────────────
@@ -295,8 +376,19 @@
 		for (const [slug, pos] of byY) {
 			const p = partOf(slug);
 			if (p !== null && prev !== null && p !== prev) {
+				// Start with a nominal divider position above this node
+				let divY = pos.y - 20;
+				// Check for any node within ±35px of the divider y; if found,
+				// push the divider above the topmost conflicting node.
+				const conflicting = [...nodePos.values()].filter(
+					(np) => Math.abs(np.y - divY) <= 35
+				);
+				if (conflicting.length > 0) {
+					const topY = Math.min(...conflicting.map((np) => np.y));
+					divY = topY - 38;
+				}
 				partDividers.push({
-					y: pos.y - 20,
+					y: divY,
 					part: p,
 					label: partLabel(p),
 				});
@@ -318,9 +410,10 @@
 		if (!pos || !svgEl || !container) return;
 		const ctm = svgEl.getScreenCTM();
 		if (!ctm) return;
+		const dragOff = dragOffsets.get(slug) ?? { dx: 0, dy: 0 };
 		const pt = svgEl.createSVGPoint();
-		pt.x = pos.x + driftX(slug);
-		pt.y = pos.y;
+		pt.x = pos.x + driftX(slug) + dragOff.dx;
+		pt.y = pos.y + dragOff.dy;
 		const sc = pt.matrixTransform(ctm);
 		const cr = container.getBoundingClientRect();
 		hovered = {
@@ -351,12 +444,23 @@
 </script>
 
 <div bind:this={container} class="relative">
+	<!-- Reset layout button -->
+	<button
+		class="reset-layout-btn"
+		onclick={resetLayout}
+		title="Reset node positions"
+		aria-label="Reset layout"
+	>Reset layout</button>
+
 	<svg
 		bind:this={svgEl}
 		viewBox="0 0 {VBOX_W} {totalH}"
 		class="w-full"
 		preserveAspectRatio="xMidYMin meet"
 		aria-label="Story timeline"
+		onpointermove={onSvgPointerMove}
+		onpointerup={onSvgPointerUp}
+		onpointercancel={onSvgPointerUp}
 	>
 		<!-- Part I label (always at top) -->
 		<text
@@ -438,13 +542,20 @@
 			{@const sats = vis ? (introPerChapter.get(slug) ?? []) : []}
 			{@const offsets = satOffsetsCache.get(slug) ?? []}
 			{#if ch}
+				{@const dragOff = dragOffsets.get(slug) ?? { dx: 0, dy: 0 }}
+				{@const isDragging = dragging?.slug === slug}
 				<g
-					style="cursor:{inMystery ? 'default' : 'pointer'}"
-					onmouseenter={() => onEnter(slug)}
-					onmousemove={() => { if (!hoveredSat) onEnter(slug); }}
-					onmouseleave={() => { hovered = null; }}
-					onclick={() => { if (!inMystery) goto('/read/' + slug); }}
+					style="cursor:{inMystery ? 'default' : isDragging ? 'grabbing' : 'grab'}"
+					onmouseenter={() => { if (!dragging) onEnter(slug); }}
+					onmousemove={() => { if (!hoveredSat && !dragging) onEnter(slug); }}
+					onmouseleave={() => { if (!dragging) hovered = null; }}
+					onclick={() => {
+						// Suppress navigation if the pointer was dragged
+						if (suppressNextClick) { suppressNextClick = false; return; }
+						if (!inMystery) goto('/read/' + slug);
+					}}
 					onkeydown={(e) => { if (e.key === 'Enter' && !inMystery) goto('/read/' + slug); }}
+					onpointerdown={(e) => { if (!inMystery) onNodePointerDown(e, slug); }}
 					role="button"
 					tabindex="0"
 					aria-label="Chapter {ch.number}{inMystery ? '' : ': ' + ch.title}"
@@ -459,8 +570,8 @@
 						fill="transparent"
 					/>
 
-					<!-- All visuals drift together -->
-					<g transform="translate({driftX(slug)}, 0)">
+					<!-- All visuals drift together + drag offset -->
+					<g transform="translate({driftX(slug) + dragOff.dx}, {dragOff.dy})">
 						<!-- Satellite lore thumbnails (foreignObject HTML inside SVG transform) -->
 						{#if sats.length > 0}
 							{#each sats as entry, i (entry.id)}
@@ -708,6 +819,28 @@
 </div>
 
 <style>
+	/* Reset layout button */
+	.reset-layout-btn {
+		position: absolute;
+		top: 6px;
+		right: 6px;
+		z-index: 10;
+		background: transparent;
+		border: none;
+		color: rgba(251, 191, 36, 0.4);
+		font-size: 9.5px;
+		font-family: 'Montserrat', sans-serif;
+		letter-spacing: 0.08em;
+		cursor: pointer;
+		padding: 2px 4px;
+		border-radius: 4px;
+		transition: color 0.18s, background 0.18s;
+	}
+	.reset-layout-btn:hover {
+		color: rgba(251, 191, 36, 0.8);
+		background: rgba(0, 0, 0, 0.18);
+	}
+
 	/* Satellite portrait thumbnail — rendered via foreignObject */
 	:global(.sat-thumb) {
 		width: 28px;
