@@ -222,6 +222,7 @@
 			class="rail-btn {activeDrawer === 'codex' ? 'active' : ''} {onCodex ? 'current' : ''}"
 			onmouseenter={() => openDrawer("codex")}
 			onfocus={() => openDrawer("codex")}
+			onclick={() => { activeDrawer = null; goto('/codex'); }}
 			aria-label="Codex"
 			aria-expanded={activeDrawer === "codex"}
 		>
@@ -241,30 +242,29 @@
 			</svg>
 		</button>
 
-		<!-- Read (only when on a /read/ page) -->
-		{#if currentSlug()}
-			<button
-				class="rail-btn {activeDrawer === 'read' ? 'active' : ''}"
-				onmouseenter={() => openDrawer("read")}
-				onfocus={() => openDrawer("read")}
-				aria-label="Reading progress"
-				aria-expanded={activeDrawer === "read"}
+		<!-- Bookmark — always visible; shows pickup point; click goes home -->
+		<button
+			class="rail-btn {activeDrawer === 'read' ? 'active' : ''} {currentSlug() ? 'current' : ''}"
+			onmouseenter={() => openDrawer("read")}
+			onfocus={() => openDrawer("read")}
+			onclick={() => { activeDrawer = null; goto('/'); }}
+			aria-label="Home"
+			aria-expanded={activeDrawer === "read"}
+		>
+			<!-- Bookmark icon -->
+			<svg
+				class="rail-icon"
+				viewBox="0 0 24 24"
+				fill="none"
+				stroke="currentColor"
+				stroke-width="1.6"
+				stroke-linecap="round"
+				stroke-linejoin="round"
+				aria-hidden="true"
 			>
-				<!-- Bookmark icon -->
-				<svg
-					class="rail-icon"
-					viewBox="0 0 24 24"
-					fill="none"
-					stroke="currentColor"
-					stroke-width="1.6"
-					stroke-linecap="round"
-					stroke-linejoin="round"
-					aria-hidden="true"
-				>
-					<path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z" />
-				</svg>
-			</button>
-		{/if}
+				<path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z" />
+			</svg>
+		</button>
 	</div>
 
 	<!-- Drawers — rendered to the right of the rail -->
@@ -377,6 +377,9 @@
 				{/if}
 			{/each}
 		</nav>
+		<a class="drawer-link-btn" href="/" onclick={() => { activeDrawer = null; }}>
+			← Home
+		</a>
 	</div>
 
 	<!-- CODEX drawer -->
@@ -420,14 +423,14 @@
 		</a>
 	</div>
 
-	<!-- READ drawer -->
-	{#if currentSlug()}
-		<div
-			class="drawer {activeDrawer === 'read' ? 'drawer-open' : ''}"
-			onmouseenter={cancelClose}
-			role="region"
-			aria-label="Reading progress drawer"
-		>
+	<!-- READ drawer — always rendered; adapts to context -->
+	<div
+		class="drawer {activeDrawer === 'read' ? 'drawer-open' : ''}"
+		onmouseenter={cancelClose}
+		role="region"
+		aria-label="Reading progress drawer"
+	>
+		{#if currentSlug()}
 			<p class="drawer-section-label">Currently reading</p>
 			{#if currentChapter()}
 				<div class="read-current">
@@ -453,8 +456,29 @@
 					Next → {frontierChapter()?.number}
 				</a>
 			{/if}
-		</div>
-	{/if}
+		{:else if resumeSlug()}
+			<p class="drawer-section-label">Pick up where you left off</p>
+			{#if resumeChapter()}
+				<div class="read-current">
+					<span class="read-ch-num">Chapter {resumeChapter()?.number}</span>
+					<span class="read-ch-title">{resumeChapter()?.title}</span>
+				</div>
+			{/if}
+			<a
+				class="read-nav-link read-next"
+				href="/read/{resumeSlug()}"
+				onclick={() => { activeDrawer = null; }}
+			>
+				{$journey.length === 0 ? 'Begin reading →' : 'Continue →'}
+			</a>
+		{:else}
+			<p class="drawer-section-label">Your journey</p>
+			<p class="drawer-hint">Start reading to track your progress.</p>
+		{/if}
+		<a class="drawer-link-btn" href="/" onclick={() => { activeDrawer = null; }}>
+			← Home
+		</a>
+	</div>
 </aside>
 
 <style>
@@ -462,17 +486,14 @@
 	.sidebar-region {
 		position: fixed;
 		left: 12px;
-		top: 50%;
-		transform: translateY(-50%);
+		top: 140px;
 		z-index: 30;
 		display: flex;
 		align-items: flex-start;
-		/* On small screens sit at top */
 	}
 	@media (max-width: 767px) {
 		.sidebar-region {
-			top: 12px;
-			transform: none;
+			top: 72px;
 		}
 	}
 
@@ -569,10 +590,12 @@
 		background: transparent;
 	}
 
-	/* Chapters drawer is scrollable and taller */
+	/* Chapters drawer: flex column so label + home link stay fixed while list scrolls */
 	.drawer-chapters {
 		max-height: min(80vh, 520px);
-		overflow-y: auto;
+		overflow: hidden;
+		display: flex;
+		flex-direction: column;
 	}
 	.drawer-chapters::-webkit-scrollbar {
 		width: 4px;
@@ -659,6 +682,19 @@
 		display: flex;
 		flex-direction: column;
 		gap: 1px;
+		overflow-y: auto;
+		flex: 1;
+		min-height: 0;
+	}
+	.chapters-list::-webkit-scrollbar {
+		width: 4px;
+	}
+	.chapters-list::-webkit-scrollbar-track {
+		background: transparent;
+	}
+	.chapters-list::-webkit-scrollbar-thumb {
+		background: rgba(180, 100, 30, 0.3);
+		border-radius: 2px;
 	}
 	.chapter-entry {
 		position: relative;

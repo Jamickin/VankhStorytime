@@ -9,8 +9,12 @@
 // original path on a fork — so the author's spine can never be lost, only added to.
 
 /**
- * @typedef {{ to: string, label: string|null, canon?: boolean, hint?: string }} Choice
- * @typedef {{ choices: Choice[] }} Fork
+ * @typedef {{ to: string, label: string|null, canon?: boolean, hint?: string, deadEnd?: boolean }} Choice
+ * @typedef {{ choices: Choice[], deadEnd?: boolean }} Fork
+ *
+ * `deadEnd: true` on a Fork means: do NOT fall through to linearNext. The branch
+ * truly terminates here — no reconnecting edge to the canon spine.
+ * `deadEnd: true` on a Choice flags to the UI that this path leads to a terminus.
  */
 
 import {
@@ -58,6 +62,7 @@ const FORKS = {
 				to: "1-2-3",
 				label: "Use the Mechanic's data chip. Three of the incident reports are accessible at your clearance.",
 				canon: false,
+				deadEnd: true,
 				hint: "Eleven Vankh-Setts of identical testimony. They couldn't describe it — but they all felt seen.",
 			},
 		],
@@ -66,7 +71,8 @@ const FORKS = {
 		choices: [{ to: "1-3", label: null, canon: true }],
 	},
 	// 1-2-2 → linearNext = "1-3" ✓
-	// 1-2-3 → linearNext = "1-3" ✓
+	// 1-2-3 is a true dead-end — explicit empty choices, no linearNext fallthrough
+	"1-2-3": { choices: [] },
 
 	// End of Part 1 — first RPG fork. Pro has seen through the illusion; the Eye
 	// has noticed him. Two paths open from that moment of recognition.
@@ -118,6 +124,7 @@ const FORKS = {
 				to: "2-1-4",
 				label: "The Mechanic mentioned three sub-levels below the maintenance corridors. Same construction signature all the way down.",
 				canon: false,
+				deadEnd: true,
 				hint: "She said she preferred you to have the context before you went looking.",
 			},
 		],
@@ -129,7 +136,8 @@ const FORKS = {
 		choices: [{ to: "2-2", label: null, canon: true }],
 	},
 	// 2-1-3 → linearNext = "2-2" ✓
-	// 2-1-4 → linearNext = "2-2" ✓
+	// 2-1-4 is a true dead-end — explicit empty choices, no linearNext fallthrough
+	"2-1-4": { choices: [] },
 
 	// End of Part 2 — second fork. The harmonic has answered; two paths open from
 	// that first moment of deliberate contact.
@@ -329,12 +337,22 @@ export function partLabel(part) {
 // chapter's title; an authored edge carries its own label.
 export function choicesFor(slug) {
 	const fork = FORKS[slug];
-	if (fork?.choices?.length)
-		return fork.choices;
+	if (fork) {
+		// Explicit choices array (even empty) takes precedence over linearNext.
+		// An empty array means a true dead-end — no forward path at all.
+		if (fork.choices) return fork.choices;
+	}
 	const to = linearNext(slug);
 	return to
 		? [{ to, label: null, canon: true }]
 		: [];
+}
+
+// True when this slug is a dead-end branch (authored terminus, not the final
+// chapter of the story). Used by the UI to render a distinct visual style.
+export function isDeadEndBranch(slug) {
+	const fork = FORKS[slug];
+	return !!(fork && fork.choices && fork.choices.length === 0);
 }
 
 // The single canonical continuation (the original story's next step), or null.

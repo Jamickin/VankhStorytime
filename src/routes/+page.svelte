@@ -45,28 +45,22 @@
 <section
 	class="mx-auto max-w-3xl px-6 pt-20 pb-10 text-center"
 >
-	<p
-		class="text-sm uppercase tracking-[0.4em] text-amber-500/80"
-	>
-		An interactive story
-	</p>
+	<img src="/logo.webp" alt="VANKH" class="mx-auto mb-1 h-20 w-20 object-contain" />
 	<h1
-		class="mt-4 text-6xl font-extrabold tracking-[0.18em] text-amber-50"
+		class="text-6xl font-extrabold tracking-[0.18em] text-amber-50"
 	>
 		VANKH
 	</h1>
+	<p
+		class="mt-2 text-sm uppercase tracking-[0.4em] text-amber-500/80"
+	>
+		An interactive story
+	</p>
 	<p
 		class="mx-auto mt-6 max-w-xl text-lg font-light italic leading-relaxed text-stone-400"
 	>
 		"Everything flows, out and in; everything
 		has its tides; all things rise and fall."
-	</p>
-	<p
-		class="mx-auto mt-5 max-w-xl font-light text-stone-400"
-	>
-		Read the story. Named things glow when you
-		hover — brush a word and see if it answers.
-		Where the path forks, you choose.
 	</p>
 
 	{#if resume}

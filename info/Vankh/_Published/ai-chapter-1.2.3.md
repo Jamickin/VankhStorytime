@@ -64,9 +64,11 @@ He had not yet stopped.
 
 He was beginning to understand that this was a choice, and not a permanent one.
 
----
+The concourse noise reassembled itself around him — announcements, footsteps, the low harmonic of the station's environmental systems. He walked through it.
 
-→ 1.3
+Somewhere between the documentation terminal and the outer corridor, the reports stopped being data. He kept checking. He kept finding the same attention looking back. He couldn't remember when he had stopped moving.
+
+*Pro has lost his mind.*
 
 ---
 

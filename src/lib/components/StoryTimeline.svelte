@@ -18,11 +18,11 @@
 		choicesFor,
 		canonNext,
 		isBranchPoint,
+		isDeadEndBranch,
 		partOf,
 		partLabel,
-		introPerChapter,
 	} from "$lib/content/storyGraph.js";
-	import { visited } from "$lib/progress.js";
+	import { visited, loreRecords } from "$lib/progress.js";
 
 	// ── Layout constants ────────────────────────────────────────────────────
 	const CX = 260; // spine center x in viewBox coords
@@ -66,25 +66,30 @@
 			const nextY = y + step;
 			const branchY = y + step * BRANCH_T;
 
-			const bxOpts =
-				nonCanon.length === 1
-					? [CX - BRANCH_X]
-					: [CX - BRANCH_X, CX + BRANCH_X];
+			// Distribute N non-canon branches evenly between fixed left/right bounds.
+			const bxOpts = nonCanon.length <= 1
+				? [CX - BRANCH_X]
+				: nonCanon.map((_, i) =>
+					CX - BRANCH_X + (i * 2 * BRANCH_X) / (nonCanon.length - 1)
+				  );
 
 			nonCanon.forEach((ch, i) => {
-				const bx =
-					bxOpts[i] ?? CX - BRANCH_X;
+				const bx = bxOpts[i] ?? CX - BRANCH_X;
+				const dead = isDeadEndBranch(ch.to);
 				nodePos.set(ch.to, {
 					x: bx,
 					y: branchY,
 					isBranch: true,
+					deadEnd: dead,
 				});
 				edges.push({
 					from: cur,
 					to: ch.to,
 					canon: false,
+					deadEnd: dead,
 				});
-				if (canon)
+				// Dead-end branches do NOT reconnect to the canon spine.
+				if (canon && !dead)
 					edges.push({
 						from: ch.to,
 						to: canon.to,
@@ -220,6 +225,9 @@
 		e.currentTarget.setPointerCapture(e.pointerId);
 		const cur = dragOffsets.get(slug) ?? { dx: 0, dy: 0 };
 		suppressNextClick = false;
+		// Clear any hover tooltip immediately so it doesn't persist during drag
+		hovered = null;
+		hoveredSat = null;
 		dragging = {
 			slug,
 			startX: e.clientX,
@@ -308,48 +316,38 @@
 		return spineD(fx, fy, tx, ty);
 	}
 
-	// ── Lore per chapter ────────────────────────────────────────────────────
-	const CAT_ORDER = {
-		Character: 0,
-		Place: 1,
-		Faction: 2,
-		Concept: 3,
-	};
-	const lorePerChapter = new Map();
-	for (const ch of chapters) {
-		const text = ch.paragraphs.join(" ");
-		const seen = new Set();
-		const entries = [];
-		for (const m of findConcepts(text, lore)) {
-			if (!seen.has(m.conceptId)) {
-				seen.add(m.conceptId);
-				const e = loreById.get(m.conceptId);
-				if (e) entries.push(e);
-			}
+	// ── Satellite system: discovered entries, deduplicated across nodes ────────
+	// Each discovered lore entry appears as a satellite only on the chapter where
+	// the reader FIRST noticed it (loreRecords[].firstChapter). Max 3 per node.
+	// This is fully reactive — new discoveries appear as satellites immediately.
+
+	// Small offset cache keyed by "slug-count" so we don't recompute on every frame.
+	const _satOffCache = new Map();
+	function getSatOffsets(slug, count) {
+		const key = `${slug}-${count}`;
+		if (!_satOffCache.has(key)) {
+			_satOffCache.set(key, satOffsets(slug, count, nodeR(slug) + 16));
 		}
-		entries.sort(
-			(a, b) =>
-				(CAT_ORDER[a.category] ?? 4) -
-				(CAT_ORDER[b.category] ?? 4)
-		);
-		lorePerChapter.set(
-			ch.slug,
-			entries.slice(0, 3)
-		);
+		return _satOffCache.get(key);
 	}
 
-	// Precompute stable satellite offsets once at init
-	const satOffsetsCache = new Map();
-	for (const [slug] of nodePos.entries()) {
-		const sats = introPerChapter.get(slug) ?? [];
-		if (sats.length > 0) {
-			// Pass a larger effective radius so the 28px thumbnail orbit clears the node
-			satOffsetsCache.set(
-				slug,
-				satOffsets(slug, sats.length, (isBranchPoint(slug) ? 11 : 9) + 16)
-			);
+	let perNodeSats = $derived(() => {
+		const result = new Map();
+		const placed = new Set();
+		for (const record of $loreRecords) {
+			if (placed.has(record.id)) continue;
+			const slug = record.firstChapter;
+			if (!slug || !nodePos.has(slug)) continue;
+			const entry = loreById.get(record.id);
+			if (!entry) continue;
+			if (!result.has(slug)) result.set(slug, []);
+			if (result.get(slug).length < 3) {
+				result.get(slug).push(entry);
+				placed.add(record.id);
+			}
 		}
-	}
+		return result;
+	});
 
 	function chapterSnippet(slug) {
 		const c = getChapter(slug);
@@ -516,8 +514,8 @@
 						? "#92400e"
 						: "#78350f"
 					: e.canon
-						? "#2d2118"
-						: "#1e1810"}
+						? "#3a2618"
+						: "#4a3020"}
 				stroke-width={e.canon
 					? lit ? 1.8 : 1.5
 					: lit ? 1.3 : 1}
@@ -527,7 +525,7 @@
 				stroke-linecap="round"
 				opacity={lit
 					? 0.9
-					: e.canon ? 0.55 : 0.38}
+					: e.canon ? 0.6 : 0.7}
 			/>
 		{/each}
 
@@ -539,13 +537,14 @@
 			{@const inMystery = mystery().has(slug)}
 			{@const hot = hovered?.slug === slug}
 			{@const fork = isBranchPoint(slug)}
-			{@const sats = vis ? (introPerChapter.get(slug) ?? []) : []}
-			{@const offsets = satOffsetsCache.get(slug) ?? []}
+			{@const dead = pos.deadEnd ?? false}
+			{@const sats = perNodeSats().get(slug) ?? []}
+			{@const offsets = sats.length > 0 ? getSatOffsets(slug, sats.length) : []}
 			{#if ch}
 				{@const dragOff = dragOffsets.get(slug) ?? { dx: 0, dy: 0 }}
 				{@const isDragging = dragging?.slug === slug}
 				<g
-					style="cursor:{inMystery ? 'default' : isDragging ? 'grabbing' : 'grab'}"
+					style="cursor:{inMystery ? 'default' : isDragging ? 'grabbing' : 'pointer'}"
 					onmouseenter={() => { if (!dragging) onEnter(slug); }}
 					onmousemove={() => { if (!hoveredSat && !dragging) onEnter(slug); }}
 					onmouseleave={() => { if (!dragging) hovered = null; }}
@@ -588,12 +587,18 @@
 									stroke-dasharray="2 5"
 								/>
 								<!-- Portrait thumbnail via foreignObject so full CSS works -->
+								<!-- stopPropagation on the foreignObject SVG element itself prevents
+								     the click from bubbling to the parent <g> node handler. -->
 								<foreignObject
 									x={pos.x + off.dx - 14}
 									y={pos.y + off.dy - 14}
 									width="28"
 									height="28"
 									style="overflow:visible"
+									onpointerdown={(e) => e.stopPropagation()}
+									onclick={(e) => e.stopPropagation()}
+									onmouseenter={(e) => e.stopPropagation()}
+									onmouseleave={(e) => e.stopPropagation()}
 								>
 									<div
 										class="sat-thumb{satHot ? ' sat-hot' : ''}"
@@ -669,22 +674,47 @@
 							cx={pos.x}
 							cy={pos.y}
 							r={nodeR(slug)}
-							fill={vis ? "#92400e" : inMystery ? "#120e09" : hot ? "#1a140e" : "#14100c"}
+							fill={vis
+								? dead ? "#3b0a0a" : "#92400e"
+								: dead ? "#1a0808" : inMystery ? "#120e09" : hot ? "#1a140e" : "#14100c"}
 							stroke={vis
-								? hot ? "#ffe066" : "#fbbf24"
-								: hot
-									? "#78716c"
-									: inFrontier
-										? "#4a3f34"
-										: inMystery
-											? "rgba(60,47,34,0.55)"
-											: "#3c2f22"}
+								? dead
+									? hot ? "#ef4444" : "#7f1d1d"
+									: hot ? "#ffe066" : "#fbbf24"
+								: dead
+									? hot ? "#ef4444" : "#b91c1c"
+									: hot
+										? "#78716c"
+										: inFrontier
+											? "#4a3f34"
+											: inMystery
+												? "rgba(60,47,34,0.55)"
+												: "#3c2f22"}
 							stroke-width={vis ? 2.2 : inMystery ? 1 : 1.5}
 							opacity={inMystery ? 0.45 : 1}
 						/>
 
-						<!-- Visited: small bright centre dot -->
-						{#if vis}
+						<!-- Dead-end marker: X cross -->
+						{#if dead}
+							{@const xr = nodeR(slug) * 0.42}
+							<line
+								x1={pos.x - xr} y1={pos.y - xr}
+								x2={pos.x + xr} y2={pos.y + xr}
+								stroke={vis ? "#ef4444" : "#dc2626"}
+								stroke-width="1.4"
+								stroke-linecap="round"
+								opacity={vis ? 0.9 : 0.8}
+							/>
+							<line
+								x1={pos.x + xr} y1={pos.y - xr}
+								x2={pos.x - xr} y2={pos.y + xr}
+								stroke={vis ? "#ef4444" : "#dc2626"}
+								stroke-width="1.4"
+								stroke-linecap="round"
+								opacity={vis ? 0.9 : 0.8}
+							/>
+						{:else if vis}
+							<!-- Visited non-dead-end: small bright centre dot -->
 							<circle
 								cx={pos.x}
 								cy={pos.y}
@@ -819,6 +849,12 @@
 </div>
 
 <style>
+	/* Remove focus outlines from SVG interactive elements */
+	:global(svg:focus),
+	:global(svg g:focus) {
+		outline: none;
+	}
+
 	/* Reset layout button */
 	.reset-layout-btn {
 		position: absolute;

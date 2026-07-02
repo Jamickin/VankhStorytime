@@ -94,28 +94,34 @@
 		}
 	}
 
-	// Spawn wispy particles + ash particles along the fire front.
+	// Spawn particles along the fire front: micro sparks, wisps, and standard embers.
 	function spawn(front) {
 		for (const { x, y } of front) {
-			if (Math.random() > 0.065) continue;
-			const wispy = Math.random() < 0.22;
+			if (Math.random() > 0.14) continue;
+			const micro = Math.random() < 0.5; // half are tiny micro sparks
+			const wispy = !micro && Math.random() < 0.22;
 			particles.push({
 				x: x + (Math.random() - 0.5) * 6,
 				y,
-				vx: (Math.random() - 0.5) * 0.9,
-				vy: -(
-					wispy
+				vx: (Math.random() - 0.5) * (micro ? 0.5 : 0.9),
+				vy: -(micro
+					? Math.random() * 1.0 + 0.2
+					: wispy
 						? Math.random() * 3.8 + 1.2
-						: Math.random() * 1.6 + 0.5
-				),
+						: Math.random() * 1.6 + 0.5),
 				life: 1.0,
-				decay: wispy
-					? Math.random() * 0.01 + 0.007
-					: Math.random() * 0.022 + 0.016,
-				size: wispy
-					? Math.random() * 1.1 + 0.3
-					: Math.random() * 1.8 + 0.7,
+				decay: micro
+					? Math.random() * 0.018 + 0.014
+					: wispy
+						? Math.random() * 0.01 + 0.007
+						: Math.random() * 0.022 + 0.016,
+				size: micro
+					? Math.random() * 0.65 + 0.15
+					: wispy
+						? Math.random() * 1.1 + 0.3
+						: Math.random() * 1.8 + 0.7,
 				wispy,
+				micro: micro,
 				ash: false,
 			});
 		}
@@ -152,19 +158,15 @@
 	}
 
 	function paintParticles(ctx) {
-		// Fire + wispy particles
+		// Fire, wispy, and micro particles
 		for (const p of particles) {
 			if (p.ash) continue;
-			const a =
-				p.life * (p.wispy ? 0.5 : 0.82);
+			// Power-curve alpha: fades smoothly, avoids the hard pop at life→0
+			const a = Math.pow(p.life, 0.6) * (p.wispy ? 0.45 : p.micro ? 0.65 : 0.82);
+			// Size stays relatively stable — only shrinks gently at the very end
+			const r = Math.max(0.1, p.size * (0.72 + p.life * 0.28));
 			ctx.beginPath();
-			ctx.arc(
-				p.x,
-				p.y,
-				p.size * (0.35 + p.life * 0.65),
-				0,
-				Math.PI * 2
-			);
+			ctx.arc(p.x, p.y, r, 0, Math.PI * 2);
 			ctx.fillStyle = `rgba(255,${Math.round(160 + p.life * 95)},${Math.round(p.life * 65)},${a.toFixed(3)})`;
 			ctx.fill();
 		}
@@ -349,8 +351,6 @@
 
 				if (!done && ct >= 1) {
 					done = true;
-					// Screen shake at peak
-					screenShake(canvas, 80);
 					resolve(); // SvelteKit swaps the DOM now — it's hidden under full char
 					navigation.complete.then(startReveal);
 				} else if (!done) {

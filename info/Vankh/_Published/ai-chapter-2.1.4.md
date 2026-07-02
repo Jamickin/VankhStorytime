@@ -66,10 +66,12 @@ The [[Vankh pulse]] came through the walls, and beneath it the secondary harmoni
 
 It had always been recording it.
 
+He reached the main maintenance level. He passed three technicians running a seal diagnostic on a cargo coupling. He nodded. They nodded back. The hatch he had sealed was behind him, and the room below it was still listening, and the secondary harmonic continued its patient presence through the station's bones.
+
+He could not find the boundary between himself and the thing he had found.
+
+He checked his calibration instruments. They showed nominal. He checked them again. He did not stop checking.
+
+*Pro has lost his mind.*
+
 ---
-
-→ 2.2
-
----
-
-#vankh

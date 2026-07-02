@@ -3,7 +3,7 @@
 	import { cubicOut } from "svelte/easing";
 	import { goto } from "$app/navigation";
 	import { visited, loreRecords, getLoreRecord } from "$lib/progress.js";
-	import { chapterIndex } from "$lib/content/chapters.js";
+	import { chapterIndex, getChapter } from "$lib/content/chapters.js";
 	import LoreImage from "./LoreImage.svelte";
 	import CategoryChip from "./CategoryChip.svelte";
 	import SealedReveal from "./SealedReveal.svelte";
@@ -32,6 +32,17 @@
 			? entry.reveals.length -
 					unlocked.length
 			: 0
+	);
+
+	// Chapter where this entry was first noticed — used for the "Go to chapter" button.
+	let firstChapter = $derived(
+		entry
+			? (() => {
+				const record = getLoreRecord(entry.id);
+				const slug = record?.firstChapter ?? null;
+				return slug ? getChapter(slug) : null;
+			})()
+			: null
 	);
 
 	function onkeydown(e) {
@@ -112,12 +123,22 @@
 					{/if}
 				</div>
 
-				<div class="mt-6 flex justify-end">
+				<div class="mt-6 flex items-center justify-between gap-3 flex-wrap">
+					{#if firstChapter}
+						<button
+							class="text-sm text-stone-500 hover:text-stone-300 border border-stone-800/60 hover:border-stone-600/60 rounded-full px-4 py-1.5 transition-colors"
+							onclick={() => { const slug = firstChapter.slug; onclose(); goto(`/read/${slug}`); }}
+						>
+							↩ Chapter {firstChapter.number}
+						</button>
+					{:else}
+						<span></span>
+					{/if}
 					<button
 						class="text-sm text-amber-400/70 hover:text-amber-300 border border-amber-900/40 hover:border-amber-600/60 rounded-full px-4 py-1.5 transition-colors"
-						onclick={() => { onclose(); goto(`/codex/${entry.id}`); }}
+						onclick={() => { const id = entry.id; onclose(); goto(`/codex/${id}`); }}
 					>
-						View full entry in Codex →
+						View full entry →
 					</button>
 				</div>
 			</div>
