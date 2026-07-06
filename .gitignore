@@ -21,3 +21,6 @@ Thumbs.db
 # Vite
 vite.config.js.timestamp-*
 vite.config.ts.timestamp-*
+
+# Claude Code agent worktrees (nested git checkouts, not part of this repo)
+/.claude/worktrees/
