@@ -370,6 +370,23 @@ export function isBranchPoint(slug) {
 	return choicesFor(slug).length > 1;
 }
 
+// The chapters immediately reachable from any visited chapter — the only
+// slugs beyond `visited` itself that are unlocked for reading. This is the
+// single source of truth for chapter-access gating: every UI that decides
+// whether a chapter/node is clickable (StoryTimeline, the sidebar chapter
+// list) must derive it from here so the lock boundary can't drift between
+// them. Anything not in `visited` and not in this set is locked, no matter
+// how many steps away it is.
+export function frontierOf(visitedSet) {
+	const f = new Set();
+	for (const slug of visitedSet) {
+		for (const c of choicesFor(slug)) {
+			if (!visitedSet.has(c.to)) f.add(c.to);
+		}
+	}
+	return f;
+}
+
 // True when the canonical next chapter belongs to a different Part (or there is
 // none) — drives the "End of Part N: <Label>" hand-off.
 export function isPartEnd(slug) {
@@ -403,14 +420,3 @@ for (const ch of chapters) {
 	lorePerChapter.set(ch.slug, entries.slice(0, 3));
 }
 
-// Entries whose FIRST REVEAL is at this chapter — what this chapter introduces.
-// Satellite thumbnails use this so each chapter shows unique characters/concepts.
-export const introPerChapter = new Map();
-for (const ch of chapters) {
-	const entries = lore.filter(e => e.reveals[0]?.at === ch.slug);
-	entries.sort((a, b) => (CAT_ORDER[a.category] ?? 4) - (CAT_ORDER[b.category] ?? 4));
-	introPerChapter.set(
-		ch.slug,
-		entries.length > 0 ? entries.slice(0, 3) : (lorePerChapter.get(ch.slug) ?? []).slice(0, 2)
-	);
-}

@@ -14,8 +14,7 @@
 		choicesFor,
 		canonNext,
 		isBranchPoint,
-		partOf,
-		partLabel,
+		frontierOf,
 	} from "$lib/content/storyGraph.js";
 
 	// ── Page state ────────────────────────────────────────────────────────────
@@ -94,19 +93,8 @@
 		return list;
 	})();
 
-	// Frontier: immediate successors of visited chapters
-	let frontier = $derived(() => {
-		const f = new Set();
-		for (const slug of $visited) {
-			for (const c of choicesFor(slug)) {
-				if (!$visited.has(c.to)) f.add(c.to);
-			}
-		}
-		return f;
-	});
-
-	// Branch flyout: shown when hovering a fork node in the chapter list
-	let flyoutSlug = $state(null);
+	// Frontier: immediate successors of visited chapters (shared with StoryTimeline)
+	let frontier = $derived(() => frontierOf($visited));
 
 	// ── Read drawer: chapter context ──────────────────────────────────────────
 	let currentChapter = $derived(() => {
@@ -312,7 +300,6 @@
 				{@const vis = $visited.has(node.slug)}
 				{@const inFrontier = frontier().has(node.slug)}
 				{@const isFork = isBranchPoint(node.slug)}
-				{@const part = partOf(node.slug)}
 				{#if ch}
 					<div class="chapter-entry {node.isBranch ? 'chapter-branch' : ''}">
 						<!-- Fork diamond indicator -->
@@ -328,12 +315,6 @@
 								if (!vis && !inFrontier) { e.preventDefault(); return; }
 								activeDrawer = null;
 							}}
-							onmouseenter={() => {
-								if (isFork) flyoutSlug = node.slug;
-							}}
-							onmouseleave={() => {
-								flyoutSlug = null;
-							}}
 							aria-label="Chapter {ch.number}: {vis || inFrontier ? ch.title : '???'}"
 						>
 							<span class="ch-num">{ch.number}</span>
@@ -348,31 +329,6 @@
 								<span class="ch-read-badge">✦</span>
 							{/if}
 						</a>
-
-						<!-- Branch flyout (appears to the right of the drawer) -->
-						{#if isFork && flyoutSlug === node.slug}
-							<div class="branch-flyout">
-								{#each choicesFor(node.slug).filter(c => !c.canon) as choice}
-									{@const bch = getChapter(choice.to)}
-									{@const bvis = $visited.has(choice.to)}
-									{@const bFrontier = frontier().has(choice.to)}
-									{#if bch}
-										<a
-											href={bvis || bFrontier ? `/read/${choice.to}` : undefined}
-											class="flyout-link {bvis ? 'ch-visited' : bFrontier ? 'ch-frontier' : 'ch-mystery'}"
-											onclick={() => { activeDrawer = null; flyoutSlug = null; }}
-										>
-											<span class="ch-num">{bch.number}</span>
-											{#if choice.label}
-												<span class="flyout-label">{choice.label}</span>
-											{:else}
-												<span class="ch-title">{bch.title}</span>
-											{/if}
-										</a>
-									{/if}
-								{/each}
-							</div>
-						{/if}
 					</div>
 				{/if}
 			{/each}
@@ -683,6 +639,7 @@
 		flex-direction: column;
 		gap: 1px;
 		overflow-y: auto;
+		overflow-x: hidden;
 		flex: 1;
 		min-height: 0;
 	}
@@ -749,44 +706,6 @@
 		transform: translateY(-50%);
 		font-size: 9px;
 		color: rgba(251, 191, 36, 0.3);
-	}
-
-	/* Branch flyout */
-	.branch-flyout {
-		position: absolute;
-		left: calc(100% + 8px);
-		top: 0;
-		min-width: 190px;
-		border-radius: 10px;
-		border: 1px solid rgba(180, 100, 30, 0.22);
-		background: rgba(18, 12, 6, 0.97);
-		backdrop-filter: blur(16px);
-		-webkit-backdrop-filter: blur(16px);
-		box-shadow: 0 8px 28px rgba(0, 0, 0, 0.55);
-		padding: 8px 10px;
-		z-index: 50;
-		display: flex;
-		flex-direction: column;
-		gap: 2px;
-	}
-	.flyout-link {
-		display: flex;
-		align-items: baseline;
-		gap: 7px;
-		padding: 5px 7px;
-		border-radius: 7px;
-		text-decoration: none;
-		font-size: 11px;
-		transition: background 0.15s;
-	}
-	.flyout-link:hover {
-		background: rgba(180, 83, 9, 0.16);
-	}
-	.flyout-label {
-		font-size: 10.5px;
-		font-style: italic;
-		color: rgba(200, 185, 150, 0.8);
-		flex: 1;
 	}
 
 	/* ── Codex entries ── */

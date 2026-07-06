@@ -21,6 +21,8 @@
 		isDeadEndBranch,
 		partOf,
 		partLabel,
+		frontierOf,
+		lorePerChapter,
 	} from "$lib/content/storyGraph.js";
 	import { visited, loreRecords } from "$lib/progress.js";
 
@@ -120,27 +122,10 @@
 		predecessors.get(e.to).add(e.from);
 	}
 
-	// ── Mystery / frontier derived from visited ─────────────────────────────
-	let frontier = $derived(() => {
-		const f = new Set();
-		for (const slug of $visited) {
-			for (const c of choicesFor(slug)) {
-				if (!$visited.has(c.to)) f.add(c.to);
-			}
-		}
-		return f;
-	});
-
-	let mystery = $derived(() => {
-		const m = new Set();
-		const f = frontier();
-		for (const slug of f) {
-			for (const c of choicesFor(slug)) {
-				if (!$visited.has(c.to) && !f.has(c.to)) m.add(c.to);
-			}
-		}
-		return m;
-	});
+	// ── Frontier derived from visited (shared with the sidebar chapter list) ──
+	// Everything not visited and not on the frontier is locked — regardless of
+	// how many steps away it is. See frontierOf() in storyGraph.js.
+	let frontier = $derived(() => frontierOf($visited));
 
 	// ── Seeded RNG for stable satellite positions ────────────────────────────
 	function seededRng(seed) {
@@ -358,11 +343,6 @@
 			: p;
 	}
 
-	function trimTitle(t, max = 24) {
-		return t.length > max
-			? t.slice(0, max) + "…"
-			: t;
-	}
 
 	// ── Part-change dividers ────────────────────────────────────────────────
 	const partDividers = [];
@@ -534,7 +514,7 @@
 			{@const ch = getChapter(slug)}
 			{@const vis = $visited.has(slug)}
 			{@const inFrontier = frontier().has(slug)}
-			{@const inMystery = mystery().has(slug)}
+			{@const locked = !vis && !inFrontier}
 			{@const hot = hovered?.slug === slug}
 			{@const fork = isBranchPoint(slug)}
 			{@const dead = pos.deadEnd ?? false}
@@ -544,20 +524,20 @@
 				{@const dragOff = dragOffsets.get(slug) ?? { dx: 0, dy: 0 }}
 				{@const isDragging = dragging?.slug === slug}
 				<g
-					style="cursor:{inMystery ? 'default' : isDragging ? 'grabbing' : 'pointer'}"
+					style="cursor:{locked ? 'default' : isDragging ? 'grabbing' : 'pointer'}"
 					onmouseenter={() => { if (!dragging) onEnter(slug); }}
 					onmousemove={() => { if (!hoveredSat && !dragging) onEnter(slug); }}
 					onmouseleave={() => { if (!dragging) hovered = null; }}
 					onclick={() => {
 						// Suppress navigation if the pointer was dragged
 						if (suppressNextClick) { suppressNextClick = false; return; }
-						if (!inMystery) goto('/read/' + slug);
+						if (!locked) goto('/read/' + slug);
 					}}
-					onkeydown={(e) => { if (e.key === 'Enter' && !inMystery) goto('/read/' + slug); }}
-					onpointerdown={(e) => { if (!inMystery) onNodePointerDown(e, slug); }}
+					onkeydown={(e) => { if (e.key === 'Enter' && !locked) goto('/read/' + slug); }}
+					onpointerdown={(e) => { if (!locked) onNodePointerDown(e, slug); }}
 					role="button"
 					tabindex="0"
-					aria-label="Chapter {ch.number}{inMystery ? '' : ': ' + ch.title}"
+					aria-label="Chapter {ch.number}{locked ? '' : ': ' + ch.title}"
 					onfocus={() => onEnter(slug)}
 					onblur={() => { hovered = null; }}
 				>
@@ -636,7 +616,7 @@
 								stroke={hot ? "rgba(251,191,36,0.55)" : "rgba(180,83,9,0.35)"}
 								stroke-width="1.5"
 							/>
-						{:else if hot && !inMystery}
+						{:else if hot && !locked}
 							<circle
 								cx={pos.x}
 								cy={pos.y}
@@ -676,7 +656,7 @@
 							r={nodeR(slug)}
 							fill={vis
 								? dead ? "#3b0a0a" : "#92400e"
-								: dead ? "#1a0808" : inMystery ? "#120e09" : hot ? "#1a140e" : "#14100c"}
+								: dead ? "#1a0808" : locked ? "#120e09" : hot ? "#1a140e" : "#14100c"}
 							stroke={vis
 								? dead
 									? hot ? "#ef4444" : "#7f1d1d"
@@ -687,11 +667,11 @@
 										? "#78716c"
 										: inFrontier
 											? "#4a3f34"
-											: inMystery
+											: locked
 												? "rgba(60,47,34,0.55)"
 												: "#3c2f22"}
-							stroke-width={vis ? 2.2 : inMystery ? 1 : 1.5}
-							opacity={inMystery ? 0.45 : 1}
+							stroke-width={vis ? 2.2 : locked ? 1 : 1.5}
+							opacity={locked ? 0.45 : 1}
 						/>
 
 						<!-- Dead-end marker: X cross -->
@@ -723,8 +703,8 @@
 							/>
 						{/if}
 
-						<!-- Mystery label -->
-						{#if inMystery}
+						<!-- Locked label: sealed placeholder, no number, no name -->
+						{#if locked}
 							<text
 								x={pos.x + nodeR(slug) + 10}
 								y={pos.y}
@@ -735,7 +715,7 @@
 								letter-spacing="0.3"
 							>· · ·</text>
 
-						<!-- Spine nodes: label on the right -->
+						<!-- Spine nodes: number only — the name surfaces in the hover card -->
 						{:else if !pos.isBranch}
 							<text
 								x={pos.x + nodeR(slug) + 13}
@@ -745,9 +725,9 @@
 								font-family="Montserrat,sans-serif"
 								fill={vis ? "#fcd34d" : hot ? "#a8a29e" : "#4a4035"}
 								letter-spacing="0.4"
-							>{ch.number} · {trimTitle(ch.title)}</text>
+							>{ch.number}</text>
 						{:else}
-							<!-- Branch nodes: label on the side -->
+							<!-- Branch nodes: number only, label on the side -->
 							{@const isLeft = pos.x < CX}
 							<text
 								x={isLeft ? pos.x - nodeR(slug) - 10 : pos.x + nodeR(slug) + 10}
@@ -768,10 +748,10 @@
 	<!-- Chapter hover card -->
 	{#if hovered && !hoveredSat}
 		{@const ch = getChapter(hovered.slug)}
-		{@const inMystery = mystery().has(hovered.slug)}
 		{@const vis = $visited.has(hovered.slug)}
+		{@const locked = !vis && !frontier().has(hovered.slug)}
 		{@const entries = lorePerChapter.get(hovered.slug) ?? []}
-		{#if ch && !inMystery}
+		{#if ch && !locked}
 			{@const TW = 300}
 			{@const cW = container?.clientWidth ?? 520}
 			{@const tx = hovered.x + 30 + TW > cW ? hovered.x - TW - 22 : hovered.x + 30}
@@ -810,7 +790,7 @@
 					{/if}
 				</div>
 			</div>
-		{:else if ch && inMystery}
+		{:else if ch && locked}
 			{@const TW = 200}
 			{@const cW = container?.clientWidth ?? 520}
 			{@const tx = hovered.x + 30 + TW > cW ? hovered.x - TW - 22 : hovered.x + 30}
