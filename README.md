@@ -22,6 +22,26 @@ npm run preview      # preview production build
 
 No test, lint, or format tooling.
 
+## Current status
+
+- Repository is cloned from `https://github.com/Jamickin/VankhStorytime.git` and tracks `origin/main`.
+- Dependencies have been installed locally and `npm run build` completes successfully.
+- Runtime dependency audit is clean via `npm audit --omit=dev`.
+- Full dev dependency audit currently reports vulnerabilities in build tooling dependencies; run `npm audit fix` and re-check before release work.
+- Build emits Svelte warnings that should be cleaned up:
+  - `src/lib/components/FloatingSidebar.svelte` — static rail element has a mouseenter handler without an ARIA role.
+  - `src/lib/components/LoreModal.svelte` — clickable dialog container should use keyboard-accessible interaction handling.
+  - `src/lib/components/StoryTimeline.svelte` — clickable SVG `foreignObject` needs accessibility treatment.
+  - `src/lib/components/StoryTimeline.svelte` — `totalH` is updated without `$state(...)`, so its reactivity should be reviewed.
+
+## Open tasks
+
+- Upgrade or patch dev dependencies flagged by `npm audit`.
+- Resolve the Svelte accessibility and reactivity warnings listed above.
+- Add basic quality tooling: at minimum a build check and parser smoke tests for `src/lib/conceptParser.js`.
+- Add a content validation script for chapter headings, generated slugs, story order, and lore reveal gates.
+- Continue filling in lore art for entries with `image: null`; current portraits live in `static/lore/`.
+
 ## Content
 
 ### Chapters — `src/lib/content/chapters.js`
