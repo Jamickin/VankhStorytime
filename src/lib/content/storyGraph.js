@@ -8,11 +8,18 @@
 // is given a `choices` array of 2+ edges, and `canon: true` always marks the
 // original path on a fork — so the author's spine can never be lost, only added to.
 
+/**
+ * @typedef {{ to: string, label: string|null, canon?: boolean, hint?: string }} Choice
+ * @typedef {{ choices: Choice[] }} Fork
+ */
+
 import {
 	chapters,
 	getChapter,
 	chapterIndex,
 } from "./chapters.js";
+import { findConcepts } from '../conceptParser.js';
+import { lore, loreById } from './lore.js';
 
 export const START =
 	chapters[0]?.slug ?? "1-1";
@@ -55,6 +62,17 @@ const FORKS = {
 		choices: [{ to: "2-1", label: null, canon: true }],
 	},
 };
+
+// In development, warn about any FORKS target that isn't a real chapter.
+if (import.meta.env.DEV) {
+	for (const [from, fork] of Object.entries(FORKS)) {
+		for (const ch of fork.choices ?? []) {
+			if (!chapters.find(c => c.slug === ch.to)) {
+				console.warn(`[storyGraph] FORKS["${from}"] → "${ch.to}" is not a published chapter slug.`);
+			}
+		}
+	}
+}
 
 // Next chapter in canonical (slug) order, or null at the very end.
 function linearNext(slug) {
@@ -117,4 +135,23 @@ export function isPartEnd(slug) {
 // True at a leaf of the tree — nowhere canonical left to go.
 export function isEnding(slug) {
 	return choicesFor(slug).length === 0;
+}
+
+// ── Lore per chapter (precomputed at module load, used by StoryTimeline) ──
+const CAT_ORDER = { Character: 0, Place: 1, Faction: 2, Concept: 3 };
+
+export const lorePerChapter = new Map();
+for (const ch of chapters) {
+	const text = ch.paragraphs.join(' ');
+	const seen = new Set();
+	const entries = [];
+	for (const m of findConcepts(text, lore)) {
+		if (!seen.has(m.conceptId)) {
+			seen.add(m.conceptId);
+			const e = loreById.get(m.conceptId);
+			if (e) entries.push(e);
+		}
+	}
+	entries.sort((a, b) => (CAT_ORDER[a.category] ?? 4) - (CAT_ORDER[b.category] ?? 4));
+	lorePerChapter.set(ch.slug, entries.slice(0, 3));
 }
