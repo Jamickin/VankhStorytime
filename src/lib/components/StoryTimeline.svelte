@@ -1,17 +1,8 @@
 <script>
 	import { goto } from "$app/navigation";
 	import { onMount } from "svelte";
-	import { findConcepts } from "$lib/conceptParser.js";
-	import {
-		lore,
-		loreById,
-	} from "$lib/content/lore.js";
 	import LoreImage from "./LoreImage.svelte";
-	import LoreModal from "./LoreModal.svelte";
-	import {
-		chapters,
-		getChapter,
-	} from "$lib/content/chapters.js";
+	import { getChapter } from "$lib/content/chapters.js";
 	import {
 		START,
 		choicesFor,
@@ -19,7 +10,9 @@
 		isBranchPoint,
 		partOf,
 		partLabel,
+		lorePerChapter,
 	} from "$lib/content/storyGraph.js";
+	import { openLore } from "$lib/stores/lorePanel.js";
 	import { visited } from "$lib/progress.js";
 
 	// ── Layout constants ────────────────────────────────────────────────────
@@ -226,36 +219,6 @@
 		return spineD(fx, f.y, tx, t.y);
 	}
 
-	// ── Lore per chapter ────────────────────────────────────────────────────
-	const CAT_ORDER = {
-		Character: 0,
-		Place: 1,
-		Faction: 2,
-		Concept: 3,
-	};
-	const lorePerChapter = new Map();
-	for (const ch of chapters) {
-		const text = ch.paragraphs.join(" ");
-		const seen = new Set();
-		const entries = [];
-		for (const m of findConcepts(text, lore)) {
-			if (!seen.has(m.conceptId)) {
-				seen.add(m.conceptId);
-				const e = loreById.get(m.conceptId);
-				if (e) entries.push(e);
-			}
-		}
-		entries.sort(
-			(a, b) =>
-				(CAT_ORDER[a.category] ?? 4) -
-				(CAT_ORDER[b.category] ?? 4)
-		);
-		lorePerChapter.set(
-			ch.slug,
-			entries.slice(0, 3)
-		);
-	}
-
 	// Precompute stable satellite offsets once at init
 	const satOffsetsCache = new Map();
 	for (const [slug] of nodePos.entries()) {
@@ -308,7 +271,6 @@
 	let svgEl = $state(null);
 	let hovered = $state(null); // { slug, x, y } container-px
 	let hoveredSat = $state(null); // { entry, px, py } container-px
-	let selectedLore = $state(null);
 
 	function onEnter(slug) {
 		if (hoveredSat) return;
@@ -474,8 +436,8 @@
 									style="cursor:pointer"
 									onmouseenter={(e) => { e.stopPropagation(); enterSat(entry, e); }}
 									onmouseleave={(e) => { e.stopPropagation(); hoveredSat = null; }}
-									onclick={(e) => { e.stopPropagation(); selectedLore = entry; }}
-									onkeydown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); selectedLore = entry; } }}
+									onclick={(e) => { e.stopPropagation(); openLore(entry); }}
+									onkeydown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); openLore(entry); } }}
 									role="button"
 									aria-label={entry.term}
 									tabindex="0"
@@ -677,11 +639,6 @@
 		</div>
 	{/if}
 
-	<!-- Lore modal (opened from satellite nodes) -->
-	<LoreModal
-		entry={selectedLore}
-		onclose={() => (selectedLore = null)}
-	/>
 </div>
 
 <style>
