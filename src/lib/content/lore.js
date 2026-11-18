@@ -21,7 +21,7 @@ export const lore = [
 			"P-R-0-4-7-9",
 		],
 		category: "Character",
-		image: "/lore/pro.png",
+		image: "/lore/pro.webp",
 		tagline: "Drive Coupling Specialist",
 		reveals: [
 			{
@@ -46,7 +46,7 @@ export const lore = [
 			"Stationary Specialist Gress",
 		],
 		category: "Character",
-		image: "/lore/gress.png",
+		image: "/lore/gress.webp",
 		tagline: "Stationary Specialist",
 		reveals: [
 			{
@@ -67,7 +67,7 @@ export const lore = [
 			"Supervisor Lin",
 		],
 		category: "Character",
-		image: "/lore/lin.png",
+		image: "/lore/lin.webp",
 		tagline:
 			"Corporate oversight, down to the decimal",
 		reveals: [
@@ -85,7 +85,7 @@ export const lore = [
 			"A-U-G-I-1-1-2",
 		],
 		category: "Character",
-		image: "/lore/the_mechanic.png",
+		image: "/lore/the_mechanic.webp",
 		tagline:
 			"Augmentations — official, and otherwise",
 		reveals: [
@@ -104,7 +104,7 @@ export const lore = [
 		term: "The Prophet",
 		aliases: ["Prophet"],
 		category: "Character",
-		image: "/lore/the_prophet.png",
+		image: "/lore/the_prophet.webp",
 		tagline:
 			"Leader of the Church of Purity",
 		reveals: [
@@ -228,7 +228,7 @@ export const lore = [
 		term: "Vankh spheres",
 		aliases: ["Vankhs", "Vankh's Eye"],
 		category: "Concept",
-		image: "/lore/vankh.jpeg",
+		image: "/lore/vankh.webp",
 		tagline:
 			"Perfect black orbs in settled space",
 		reveals: [
@@ -335,7 +335,7 @@ export const lore = [
 			"respiratory ritual",
 		],
 		category: "Concept",
-		image: "/lore/breathing_pattern.png",
+		image: "/lore/breathing_pattern.webp",
 		tagline:
 			"Left lung. Right lung. Pause. Reverse.",
 		reveals: [
@@ -364,7 +364,7 @@ export const lore = [
 		term: "Pro's Mother",
 		aliases: [],
 		category: "Character",
-		image: "/lore/pro_mother.png",
+		image: "/lore/pro_mother.webp",
 		tagline:
 			"Keeper of suppressed histories",
 		reveals: [
