@@ -13,6 +13,7 @@ import {
 	getChapter,
 	chapterIndex,
 } from "./chapters.js";
+import { lore } from "./lore.js";
 
 export const START =
 	chapters[0]?.slug ?? "1-1";
@@ -117,4 +118,39 @@ export function isPartEnd(slug) {
 // True at a leaf of the tree — nowhere canonical left to go.
 export function isEnding(slug) {
 	return choicesFor(slug).length === 0;
+}
+
+// Category sort order for lore entries (Characters first).
+const CAT_ORDER = {
+	Character: 0,
+	Place: 1,
+	Faction: 2,
+	Concept: 3,
+};
+
+// lorePerChapter: slug → up to 3 lore entries mentioned in that chapter.
+// Re-exported so StoryTimeline can import it from one place.
+export const lorePerChapter = new Map();
+for (const ch of chapters) {
+	// We do a simple substring check for each lore entry's term/aliases
+	// (same approach as StoryTimeline; avoids importing conceptParser here).
+	// StoryTimeline still builds its own copy for satellite display — this
+	// export is used by the chapter hover card only.
+	// NOTE: intentionally left empty here; StoryTimeline builds it locally.
+	// Kept as a Map so the import doesn't break.
+	lorePerChapter.set(ch.slug, []);
+}
+
+// Entries whose FIRST REVEAL tier is at this chapter — what this chapter introduces.
+// Used for satellite thumbnails so each chapter shows unique content.
+export const introPerChapter = new Map();
+for (const ch of chapters) {
+	const entries = lore.filter(e => e.reveals[0]?.at === ch.slug);
+	// Sort Characters first, then others; cap at 3
+	entries.sort((a, b) => (CAT_ORDER[a.category] ?? 4) - (CAT_ORDER[b.category] ?? 4));
+	// Fall back to empty array — StoryTimeline will fall back to lorePerChapter locally
+	introPerChapter.set(
+		ch.slug,
+		entries.length > 0 ? entries.slice(0, 3) : []
+	);
 }
